@@ -14,7 +14,7 @@ CyberZHG's [repo on layer normalization](https://github.com/CyberZHG/torch-layer
 
 ## Approach to this Neural Network
 
-This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including the use of direct error (not MSE) when calculating `output` versus `label`; the use of a sigmoid activation function (versus ReLu); and the use of online training (verus batched, etc.).
+This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including the use of direct error (not MSE) when calculating `output` versus `label`; the use of a sigmoid activation function (versus ReLu); and the use of online training (versus batched, etc.)
 
 I hope to update this repo as time goes on with adjustments to the error, activation, and training methods.
 
@@ -22,13 +22,13 @@ This repo also does not include any kind of parallelization whatsoever, though i
 
 I have tried to make the underlying code as flexible as possible, allowing for quick adjustments to the number of layers, neurons, biases, etc. To see my convoluted implementation of a matrix library in C, check out [Matrix](https://github.com/andersensam/Matrix).
 
-As you may expect, the models exported from this neural network cannot be used with any other existing framework that I'm aware of. I had fun coming up with a different file format based on the [Yann LeCun MNIST dataset](https://yann.lecun.com/exdb/mnist/)
+As you may expect, the models exported from this neural network cannot be used with any other existing framework that I'm aware of. I had fun coming up with a different file format based on the [Yann LeCun MNIST dataset](https://yann.lecun.com/exdb/mnist/).
 
 ## Compilation
 
-To build the neural network, simply use `make`. By default, this will compile with `-O3`. 
+To build the neural network, simply use `make`. By default, this will compile with `-O3`
 
-To disable optimizations and compile with debug symbols, use `make debug`.
+To disable optimizations and compile with debug symbols, use `make debug`
 
 ## Using the Neural Network
 
@@ -106,26 +106,26 @@ Percentage correct: 94.60000%
 
 Descriptions of each file in `src/` and their functions:
 
-### main
+### *main.c*
 
 The main binary, used for training or predicting.
 
-### Matrix
+### *Matrix.c*
 
 The Matrix library. See note above to check out the upstream repo.
 
-### MNIST_Images
+### *MNIST_Images.c*
 
 A data type created to store the MNIST images in `float` format, wrapping inside a `floatMatrix`. It also handles importing the dataset.
 
-### MNIST_Labels
+### *MNIST_Labels.c*
 
 Read in the label dataset and wrap it in a container.
 
-### Neural_Network
+### *Neural_Network.c*
 
 The Neural Network itself and associated helper functions / data structures, like the Neural Network Layer structure.
 
-### utils
+### *utils.c*
 
 Small, useful utilities
