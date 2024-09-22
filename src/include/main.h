@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-18
+ * @version: 2024-09-22
  *
  * General Notes:
  *
@@ -18,11 +18,15 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+/* Configure multithreading */
+#define INFERENCE_MAX_THREADS 4
+
 /* Standard dependencies */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <pthread.h>
 
 /* Local dependencies */
 #include "Matrix.h"
@@ -55,5 +59,14 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
  * @param num_predict Number of images to predict
  */
 void inference(const char* labels_path, const char* images_path, const char* model_path, size_t num_predict);
+
+/**
+ * Function to perform batched inference on a pretrained model (for multithreading)
+ * @param labels_path Path to the labels for the data
+ * @param images_path Path to the images
+ * @param model_path Path to the pretained model
+ * @param num_predict Number of images to predict
+ */
+void threaded_inference(const char* labels_path, const char* images_path, const char* model_path, size_t num_predict);
 
 #endif

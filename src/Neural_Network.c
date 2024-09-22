@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-18
+ * @version: 2024-09-22
  *
  * General Notes:
  *
@@ -77,6 +77,8 @@ Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previ
         target->new_weights = NULL;
 
         target->clear = Neural_Network_Layer_clear;
+        target->copy = Neural_Network_Layer_copy;
+
         return target;
     }
 
@@ -120,6 +122,7 @@ Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previ
     target->new_weights = NULL;
 
     target->clear = Neural_Network_Layer_clear;
+    target->copy = Neural_Network_Layer_copy;
 
     return target;
 }
@@ -154,6 +157,30 @@ floatMatrix* Neural_Network_Layer_normalize_layer(const floatMatrix* target) {
     squared->clear(squared);
 
     return divided;
+}
+
+Neural_Network_Layer* Neural_Network_Layer_copy(const Neural_Network_Layer* self) {
+
+    if (self == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network Layer provided to copy\n"); }
+        return NULL;
+    }
+
+    // Take advantage of the import function to just allocate memory and setup the function pointers
+    Neural_Network_Layer* target = init_Neural_Network_Layer(self->num_neurons, 0, false, true);
+
+    if (self->weights != NULL) { target->weights = self->weights->copy(self->weights); }
+
+    if (self->biases != NULL) { target->biases = self->biases->copy(self->biases); }
+
+    if (self->outputs != NULL) { target->outputs = self->outputs->copy(self->outputs); }
+
+    if (self->errors != NULL) { target->errors = self->errors->copy(self->errors); }
+
+    if (self->new_weights != NULL) { target->new_weights = self->new_weights->copy(self->new_weights); }
+
+    return target;
 }
 
 floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatrix* image) {
@@ -221,6 +248,35 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
     flat_image->clear(flat_image);
 
     return final_output;
+}
+
+void* Neural_Network_threaded_predict(void* thread_void) {
+
+    if (thread_void == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Threaded_Inference_Results provided to batch_predict\n"); }
+        return NULL;
+    }
+
+    Threaded_Inference_Result* thread = (Threaded_Inference_Result*)thread_void;
+    
+    // Create a floatMatrix reference to use as we iterate over the images
+    floatMatrix* current_result = NULL;
+
+    for (size_t i = 0; i < thread->num_images; ++i) {
+
+        current_result = Neural_Network_predict(thread->nn, thread->images->get(thread->images, i + thread->image_start_index));
+
+        for (size_t j = 0; j < current_result->num_rows; ++j) {
+
+            // For the output of each image, copy each row of the Vector into the corresponding coordinate in the Matrix
+            thread->results->set(thread->results, j, i, current_result->get(current_result, j, 0));
+        }
+
+        current_result->clear(current_result);
+    }
+
+    return NULL;
 }
 
 floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target) {
@@ -330,11 +386,11 @@ floatMatrix* Neural_Network_create_label(uint8_t label) {
     return target;
 }
 
-void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_t label) {
+void Neural_Network_training_predict(Neural_Network* self, const pixelMatrix* image) {
 
     if (self == NULL || image == NULL) {
 
-        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural_Network or pixelMatrix provided to train\n"); }
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural_Network or pixelMatrix provided to training_predict\n"); }
     }
 
     // Convert the image to a floatMatrix
@@ -386,6 +442,21 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
         add_bias->clear(add_bias);
         normalized->clear(normalized);
     }
+
+    // Clean up the converted images
+    converted_image->clear(converted_image);
+    flat_image->clear(flat_image);
+}
+
+void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_t label) {
+
+    if (self == NULL || image == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural_Network or pixelMatrix provided to train\n"); }
+    }
+
+    /* Do inference and store all the layer outputs in the respective layers */
+    Neural_Network_training_predict(self, image);
 
     /* Begin the backpropagation part of the training process */
 
@@ -460,7 +531,6 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
     }
 
     output->clear(output);
-    flat_image->clear(flat_image);
 
     // Clean up the special input layer
     if (self->layers[0]->outputs != NULL) {
@@ -468,6 +538,10 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
         self->layers[0]->outputs->clear(self->layers[0]->outputs);
         self->layers[0]->outputs = NULL;
     }
+}
+
+void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t batch_size) {
+
 }
 
 void Neural_Network_save(const Neural_Network* self, bool include_biases, const char* filename) {
@@ -682,8 +756,11 @@ Neural_Network* import_Neural_Network(const char* filename) {
     target->learning_rate = learning_rate;
 
     target->predict = Neural_Network_predict;
+    target->threaded_predict = Neural_Network_threaded_predict;
     target->train = Neural_Network_train;
+    target->batch_train = Neural_Network_batch_train;
     target->save = Neural_Network_save;
+    target->copy = Neural_Network_copy;
     target->clear = Neural_Network_clear;
 
     // Setup the array of pointers for each layer
@@ -880,9 +957,106 @@ Neural_Network* init_Neural_Network(size_t num_layers, const size_t* layer_info,
     }
 
     target->predict = Neural_Network_predict;
+    target->threaded_predict = Neural_Network_threaded_predict;
     target->train = Neural_Network_train;
+    target->batch_train = Neural_Network_batch_train;
     target->save = Neural_Network_save;
+    target->copy = Neural_Network_copy;
     target->clear = Neural_Network_clear;
+
+    return target;
+}
+
+Neural_Network* Neural_Network_copy(const Neural_Network* self) {
+    
+    if (self == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network provided to copy\n"); }
+        return NULL;
+    }
+
+    Neural_Network* target = malloc(sizeof(Neural_Network));
+
+    if (target == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for Neural Network copy\n"); }
+        return NULL;
+    }
+
+    target->num_layers = self->num_layers;
+    target->learning_rate = self->learning_rate;
+    
+    target->layers = calloc(target->num_layers, sizeof(Neural_Network_Layer*));
+
+    if (target->layers == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for Neural Network Layer array in copy\n"); }
+
+        free(target);
+        return NULL;
+    }
+
+    for (size_t i = 0; i < target->num_layers; ++i) {
+
+        target->layers[i] = self->layers[i]->copy(self->layers[i]);
+    }
+
+    target->predict = Neural_Network_predict;
+    target->threaded_predict = Neural_Network_threaded_predict;
+    target->train = Neural_Network_train;
+    target->batch_train = Neural_Network_batch_train;
+    target->save = Neural_Network_save;
+    target->copy = Neural_Network_copy;
+    target->clear = Neural_Network_clear;
+
+    return target;
+}
+
+void Threaded_Inference_Result_clear( Threaded_Inference_Result* target) {
+
+    if (target == NULL) { return; }
+
+    if (target->results == NULL) { free(target); return; }
+
+    target->results->clear(target->results);
+    free(target);
+
+    return;
+}
+
+Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* nn, const MNIST_Images* images,
+    size_t image_start_index, size_t num_images) {
+
+    if (nn == NULL || images == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network or MNIST_Images passed to init_Threaded_Inference_Result\n"); }
+        return NULL;
+    }
+
+    Threaded_Inference_Result* target = malloc(sizeof(Threaded_Inference_Result));
+
+    if (target == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate Threaded_Inference_Result\n"); }
+        return NULL;
+    }
+
+    target->nn = nn;
+    target->images = images;
+    target->image_start_index = image_start_index;
+    target->num_images = num_images;
+
+    target->results = floatMatrix_allocate(MNIST_LABELS, num_images);
+
+    if (target->results == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate floatMatrix for Threaded_Inference_Result\n"); }
+
+        free(target);
+        return NULL;
+    }
+
+    target->clear = Threaded_Inference_Result_clear;
 
     return target;
 }

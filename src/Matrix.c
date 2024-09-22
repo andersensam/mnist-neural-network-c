@@ -173,8 +173,8 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(dot)(const MATRIX_TYPE_NAME *self, const MATRIX_
             // For each element, multiply and add the sum
             for (size_t k = 0; k < row->num_cols; ++k) {
 
-                // Notice we use the same (row/col, 0, k) because get_col returns a row vector
-                sum += row->get(row, 0, k) * col->get(col, 0, k);
+                // Get coordinates (0, k) and (k, 0) per the different orientations
+                sum += row->get(row, 0, k) * col->get(col, k, 0);
             }
 
             // Store the sum in the result Matrix with coordinates i, j
@@ -231,11 +231,11 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(get_col)(const struct MATRIX_TYPE_NAME *target, 
         return NULL;
     }
 
-    MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(1, target->num_rows);
+    MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(target->num_rows, 1);
 
     for (size_t i = 0; i < target->num_rows; ++i) {
 
-        result->set(result, 0, i, target->get(target, i, target_col));
+        result->set(result, i, 0, target->get(target, i, target_col));
     }
 
     return result;

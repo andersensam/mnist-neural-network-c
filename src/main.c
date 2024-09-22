@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-18
+ * @version: 2024-09-22
  *
  * General Notes:
  *
@@ -32,6 +32,15 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
     if (num_training_images > images->num_images) {
 
         fprintf(stderr, "ERR: num_training_images cannot be greater than number of images in dataset\n");
+        images->clear(images);
+        labels->clear(labels);
+
+        return;
+    }
+
+    if (labels->num_labels != images->num_images) {
+
+        fprintf(stderr, "ERR: Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
         images->clear(images);
         labels->clear(labels);
 
@@ -93,6 +102,15 @@ void inference(const char* labels_path, const char* images_path, const char* mod
         return;
     }
 
+    if (labels->num_labels != images->num_images) {
+
+        fprintf(stderr, "ERR: Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        images->clear(images);
+        labels->clear(labels);
+
+        return;
+    }
+
     log_message("Starting to load model from file");
     Neural_Network* nn = import_Neural_Network(model_path);
     log_message("Finished loading model from file");
@@ -126,7 +144,7 @@ void inference(const char* labels_path, const char* images_path, const char* mod
         current_prediction->clear(current_prediction);
     }
 
-    log_message("Completed inference");
+    log_message("Finished inference");
 
     printf("\nStatistics:\nModel path: %s\nImages predicted: %zu\nImages predicted correctly: %zu\nPercentage correct: %3.5f%c\n",
         model_path, num_predict, number_correct, ((float)number_correct / (float)num_predict) * 100.0f, '%');
@@ -136,6 +154,127 @@ void inference(const char* labels_path, const char* images_path, const char* mod
     nn->clear(nn);
 
     return;
+}
+
+void threaded_inference(const char* labels_path, const char* images_path, const char* model_path, size_t num_predict) {
+
+    // Load image dataset and associated labels
+    log_message("Starting to load MNIST labels");
+    MNIST_Labels* labels = init_MNIST_labels(labels_path);
+    log_message("Finished loading MNIST labels");
+
+    log_message("Starting to load MNIST images");
+    MNIST_Images* images = init_MNIST_images(images_path);
+    log_message("Finished loading MNIST images");
+
+    if (num_predict > images->num_images) {
+
+        fprintf(stderr, "ERR: num_predict cannot be greater than number of images in dataset\n");
+        images->clear(images);
+        labels->clear(labels);
+
+        return;
+    }
+
+    if (labels->num_labels != images->num_images) {
+
+        fprintf(stderr, "ERR: Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        images->clear(images);
+        labels->clear(labels);
+
+        return;
+    }
+
+    log_message("Starting to load model from file");
+    Neural_Network* nn = import_Neural_Network(model_path);
+    log_message("Finished loading model from file");
+
+    // Define the threads we'll use (configure in main.h)
+    pthread_t* thread_ids = calloc(INFERENCE_MAX_THREADS, sizeof(pthread_t));
+
+    // Setup the threading info
+    Threaded_Inference_Result** thread_results = calloc(INFERENCE_MAX_THREADS, sizeof(Threaded_Inference_Result*));
+    Neural_Network** thread_nn = calloc(INFERENCE_MAX_THREADS, sizeof(Neural_Network*));
+
+    for (size_t i = 0; i < INFERENCE_MAX_THREADS; ++i) {
+
+        if (i == 0) {
+
+            thread_nn[i] = nn;
+        }
+        else {
+
+            // Make copies of the Neural Network to avoid memory access issues
+            thread_nn[i] = nn->copy(nn);
+        }
+    }
+
+    // Setup the 'batch' size for the threads
+    size_t images_per_thread = num_predict / INFERENCE_MAX_THREADS;
+    size_t final_thread_images = num_predict - (images_per_thread * (INFERENCE_MAX_THREADS - 1));
+
+    log_message("Starting threaded inference");
+
+    for (size_t i = 0; i < INFERENCE_MAX_THREADS; ++i) {
+
+        if (i == 0) {
+
+            thread_results[i] = init_Threaded_Inference_Result(thread_nn[i], images, 0, images_per_thread);
+        }
+        else if (i == INFERENCE_MAX_THREADS - 1) {
+
+            thread_results[i] = init_Threaded_Inference_Result(thread_nn[i], images, thread_results[i - 1]->image_start_index + images_per_thread, final_thread_images);
+        }
+        else {
+
+            thread_results[i] = init_Threaded_Inference_Result(thread_nn[i], images, thread_results[i - 1]->image_start_index + images_per_thread, images_per_thread);
+        }
+
+        pthread_create(&(thread_ids[i]), NULL, thread_nn[i]->threaded_predict, (void*)(thread_results[i]));
+    }
+
+    for (size_t i = 0; i < INFERENCE_MAX_THREADS; ++i) {
+
+        pthread_join(thread_ids[i], NULL);
+    }
+
+    size_t number_correct = 0;
+    size_t current_guess = 0;
+    uint32_t current_label = 0;
+
+    for (size_t i = 0; i < INFERENCE_MAX_THREADS; ++i) {
+
+        for (size_t j = 0; j < thread_results[i]->num_images; ++j) {
+
+            current_label = labels->get(labels, thread_results[i]->image_start_index + j);
+
+            current_guess = thread_results[i]->results->max_idx(thread_results[i]->results, COLUMN, j);
+
+            if (current_guess == current_label) {
+
+                ++number_correct;
+            }
+        }
+    }
+
+    log_message("Finished threaded inference");
+
+    printf("\nStatistics:\nModel path: %s\nImages predicted: %zu\nImages predicted correctly: %zu\nPercentage correct: %3.5f%c\n",
+        model_path, num_predict, number_correct, ((float)number_correct / (float)num_predict) * 100.0f, '%');
+
+    // Clean up
+    for (size_t i = 0; i < INFERENCE_MAX_THREADS; ++i) {
+
+        thread_results[i]->clear(thread_results[i]);
+        thread_nn[i]->clear(thread_nn[i]);
+    }
+
+    free(thread_results);
+    free(thread_nn);
+    free(thread_ids);
+
+    labels->clear(labels);
+    images->clear(images);
 }
 
 int main(int argc, char* argv[]) {
@@ -194,6 +333,18 @@ int main(int argc, char* argv[]) {
 
         // Execute inference and exit
         inference(argv[2], argv[3], argv[5], (size_t)atoi(argv[4]));
+        return 0;
+    }
+    else if (strncmp(argv[1], "threaded-predict", 16) == 0) {
+
+        if (argc < 6) {
+
+            fprintf(stderr, "ERR: Too few arguments provided to use threaded-predict\n");
+            return -1;
+        }
+
+        // Execute inference and exit
+        threaded_inference(argv[2], argv[3], argv[5], (size_t)atoi(argv[4]));
         return 0;
     }
     else if (strncmp(argv[1], "help", 4) == 0) {
