@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-22
+ * @version: 2024-09-24
  *
  * General Notes:
  *
@@ -201,8 +201,16 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
     // Define some variables we're going to use again and again in loops
     floatMatrix* layer_input = NULL;
     floatMatrix* add_bias = NULL;
-    floatMatrix* layer_output = NULL;
     floatMatrix* normalized = NULL;
+
+    // Setup storage for the outputs of each layer
+    floatMatrix** outputs = calloc(self->num_layers, sizeof(floatMatrix*));
+
+    if (outputs == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for output storage in predict\n"); }
+        return NULL;
+    }
 
     for (size_t i = 1; i < self->num_layers; ++i) {
 
@@ -214,7 +222,7 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
         else {
 
             layer_input = self->layers[i]->weights->dot(self->layers[i]->weights, 
-                self->layers[i - 1]->outputs);
+                outputs[i - 1]);
         }
 
         add_bias = layer_input->add(layer_input, self->layers[i]->biases);
@@ -225,27 +233,23 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
         // Since normalization is disabled, just copy the Matrix
         normalized = add_bias->copy(add_bias);
 
-        // Apply the sigmoid actication function
-        layer_output = normalized->apply(normalized, sigmoid);
-
-        // Copy the result of the sigmoid to the output of  the layer
-        self->layers[i]->outputs = layer_output->copy(layer_output);
+        // Apply the sigmoid actication function and store as the layer's output
+        outputs[i] = normalized->apply(normalized, sigmoid);
 
         add_bias->clear(add_bias);
         layer_input->clear(layer_input);
-        layer_output->clear(layer_output);
         normalized->clear(normalized);
     }
 
-    floatMatrix* final_output = Neural_Network_softmax(self->layers[self->num_layers - 1]->outputs);
+    floatMatrix* final_output = Neural_Network_softmax(outputs[self->num_layers - 1]);
 
     for (size_t i = 1; i < self->num_layers; ++i) {
 
-        self->layers[i]->outputs->clear(self->layers[i]->outputs);
-        self->layers[i]->outputs = NULL;
+        outputs[i]->clear(outputs[i]);
     }
 
     flat_image->clear(flat_image);
+    free(outputs);
 
     return final_output;
 }

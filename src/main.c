@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-22
+ * @version: 2024-09-24
  *
  * General Notes:
  *
@@ -194,20 +194,6 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
     // Setup the threading info
     Threaded_Inference_Result** thread_results = calloc(INFERENCE_MAX_THREADS, sizeof(Threaded_Inference_Result*));
-    Neural_Network** thread_nn = calloc(INFERENCE_MAX_THREADS, sizeof(Neural_Network*));
-
-    for (size_t i = 0; i < INFERENCE_MAX_THREADS; ++i) {
-
-        if (i == 0) {
-
-            thread_nn[i] = nn;
-        }
-        else {
-
-            // Make copies of the Neural Network to avoid memory access issues
-            thread_nn[i] = nn->copy(nn);
-        }
-    }
 
     // Setup the 'batch' size for the threads
     size_t images_per_thread = num_predict / INFERENCE_MAX_THREADS;
@@ -219,18 +205,18 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
         if (i == 0) {
 
-            thread_results[i] = init_Threaded_Inference_Result(thread_nn[i], images, 0, images_per_thread);
+            thread_results[i] = init_Threaded_Inference_Result(nn, images, 0, images_per_thread);
         }
         else if (i == INFERENCE_MAX_THREADS - 1) {
 
-            thread_results[i] = init_Threaded_Inference_Result(thread_nn[i], images, thread_results[i - 1]->image_start_index + images_per_thread, final_thread_images);
+            thread_results[i] = init_Threaded_Inference_Result(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, final_thread_images);
         }
         else {
 
-            thread_results[i] = init_Threaded_Inference_Result(thread_nn[i], images, thread_results[i - 1]->image_start_index + images_per_thread, images_per_thread);
+            thread_results[i] = init_Threaded_Inference_Result(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, images_per_thread);
         }
 
-        pthread_create(&(thread_ids[i]), NULL, thread_nn[i]->threaded_predict, (void*)(thread_results[i]));
+        pthread_create(&(thread_ids[i]), NULL, nn->threaded_predict, (void*)(thread_results[i]));
     }
 
     for (size_t i = 0; i < INFERENCE_MAX_THREADS; ++i) {
@@ -266,15 +252,14 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
     for (size_t i = 0; i < INFERENCE_MAX_THREADS; ++i) {
 
         thread_results[i]->clear(thread_results[i]);
-        thread_nn[i]->clear(thread_nn[i]);
     }
 
     free(thread_results);
-    free(thread_nn);
     free(thread_ids);
 
     labels->clear(labels);
     images->clear(images);
+    nn->clear(nn);
 }
 
 int main(int argc, char* argv[]) {
@@ -355,6 +340,10 @@ int main(int argc, char* argv[]) {
 
         printf("Expected usage: main predict labels_path images_path num_predict model_path\n");
         printf("Example for predict: main predict data/labels data/images 100 model.model\n");
+        printf("This example predicts 100 images");
+
+        printf("Expected usage: main threaded-predict labels_path images_path num_predict model_path\n");
+        printf("Example for predict: main threaded-predict data/labels data/images 100 model.model\n");
         printf("This example predicts 100 images");
 
         return 0;
