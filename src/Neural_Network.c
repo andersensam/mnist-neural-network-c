@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-25
+ * @version: 2024-09-26
  *
  * General Notes:
  *
@@ -443,9 +443,6 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
     floatMatrix* transpose = NULL;
     floatMatrix* sigmoid_prime = NULL;
     floatMatrix* multiplied = NULL;
-    floatMatrix* dot = NULL;
-    floatMatrix* scaled = NULL;
-    floatMatrix* added = NULL;
 
     for (size_t i = self->num_layers - 1; i >= 1; --i) {
 
@@ -464,34 +461,28 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
             transpose->clear(transpose);
         }
 
-        // Sig prime
+        // Get the sigmoid prime of the outputs
         sigmoid_prime = Neural_Network_sigmoid_prime(self->layers[i]->outputs);
 
-        // Mult
+        // Multiply the errors by the sigmoid prime
         multiplied = self->layers[i]->errors->multiply(self->layers[i]->errors, sigmoid_prime);
 
-        // Transpose
+        // Transpose the previous layer's output
         transpose = self->layers[i - 1]->outputs->transpose(self->layers[i - 1]->outputs);
 
-        // Dot
-        dot = multiplied->dot(multiplied, transpose);
-        //printf("Size of dot for layer [%zu]: %zu x %zu\n", i, dot->num_rows, dot->num_cols);
+        // Dot product 
+        self->layers[i]->new_weights = multiplied->dot(multiplied, transpose);
 
         // Scale
-        scaled = dot->scale(dot, self->learning_rate);
+        self->layers[i]->new_weights->scale_o(self->layers[i]->new_weights, self->learning_rate);
 
         // Add
-        added = scaled->add(scaled, self->layers[i]->weights);
+        self->layers[i]->new_weights->add_o(self->layers[i]->new_weights, self->layers[i]->weights);
 
-        // Persist
-        self->layers[i]->new_weights = added->copy(added);
-
+        // Clean up
         sigmoid_prime->clear(sigmoid_prime);
-        multiplied->clear(multiplied);
         transpose->clear(transpose);
-        dot->clear(dot);
-        scaled->clear(scaled);
-        added->clear(added);
+        multiplied->clear(multiplied);
     }
 
     // Clean up and move the weights

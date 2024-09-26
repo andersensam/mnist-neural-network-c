@@ -14,7 +14,7 @@ CyberZHG's [repo on layer normalization](https://github.com/CyberZHG/torch-layer
 
 ## Approach to this Neural Network
 
-This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including the use of direct error (not MSE) when calculating `output` versus `label` and the use of a sigmoid activation function (versus ReLu).
+This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including a lack of multithreaded training and GPU utilization.
 
 I hope to update this repo as time goes on with adjustments to the error, activation, and training methods.
 
@@ -68,15 +68,16 @@ $ ./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 
 [2024-09-18 23:33:00]: Finished saving model
 ```
 
-### (Mini-)batch Training of the Neural Network
+### (Mini)batch Training of the Neural Network
 
-Using (mini-)batch, we can traing the Neural Network with the following syntax:
+Using (mini)batch, we can train the Neural Network with the following syntax:
 
 ```
 ./target/main train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
 ```
 
 A complete example is listed below:
+
 ```
 ./target/main batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 false 3 784 100 10 10000 10 3 small_100_batch.model
 ```
@@ -105,7 +106,7 @@ As you can set the batch size to whatever you'd like, you could use the batch si
 Running inference on a trained model follows a similar syntax:
 
 ```
-./target/main predict path to labels> <path to images> <images to predict> <path to model>
+./target/main predict <path to labels> <path to images> <images to predict> <path to model>
 ```
 
 An example is:
@@ -140,7 +141,7 @@ Percentage correct: 94.60000%
 Running multithreaded inference is the same as standard inference, only swapping out `predict` for `threaded-predict`:
 
 ```
-./target/main threaded-predict path to labels> <path to images> <images to predict> <path to model>
+./target/main threaded-predict <path to labels> <path to images> <images to predict> <path to model>
 ```
 
 An example is:
