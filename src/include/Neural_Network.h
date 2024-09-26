@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-18
+ * @version: 2024-09-25
  *
  * General Notes:
  *
@@ -76,6 +76,7 @@ typedef struct Neural_Network_Layer {
     floatMatrix* outputs;
     floatMatrix* errors;
     floatMatrix* new_weights;
+    floatMatrix* z;
 
     /* Methods */
 
@@ -85,6 +86,13 @@ typedef struct Neural_Network_Layer {
      * @returns Returns a floatMatrix with its values normalized
      */
     floatMatrix* (*normalize)(const floatMatrix* target);
+
+    /**
+     * Copy a Neural Network Layer
+     * @param self Neural Network Layer to copy
+     * @returns Returns a copy of the specified Neural Network Layer
+     */
+    struct Neural_Network_Layer* (*copy)(const struct Neural_Network_Layer* self);
 
     /**
      * Cleans up a Neural Network Layer instance
@@ -105,17 +113,42 @@ typedef struct Neural_Network_Layer {
 Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previous_layer_neurons, bool generate_biases, bool import);
 
 /**
- * Cleans up a Neural Network Layer instance
- * @param target The Neural Network Layer instance to clean up
- */
-void Neural_Network_Layer_clear(Neural_Network_Layer* target);
-
-/**
  * Normalize a Neural Network Layer
  * @param target The pointer to the floatMatrix we want to normalize
  * @returns Returns a new floatMatrix with its values normalized
  */
 floatMatrix* Neural_Network_Layer_normalize_layer(const floatMatrix* target);
+
+/**
+ * Copy a Neural Network Layer
+ * @param target Neural Network Layer to copy
+ * @returns Returns a copy of the specified Neural Network Layer
+ */
+Neural_Network_Layer* Neural_Network_Layer_copy(const Neural_Network_Layer* self);
+
+/**
+ * Cleans up a Neural Network Layer instance
+ * @param target The Neural Network Layer instance to clean up
+ */
+void Neural_Network_Layer_clear(Neural_Network_Layer* target);
+
+typedef struct Threaded_Inference_Result {
+
+    /* Data elements */
+    const struct Neural_Network* nn;
+    const MNIST_Images* images;
+    size_t image_start_index;
+    size_t num_images;
+    floatMatrix* results;
+
+    /* Methods */
+
+    /**
+     * Cleans up Threaded Inference Result
+     */
+    void (*clear)(struct Threaded_Inference_Result* target);
+
+} Threaded_Inference_Result;
 
 typedef struct Neural_Network {
 
@@ -135,6 +168,12 @@ typedef struct Neural_Network {
     floatMatrix* (*predict)(const struct Neural_Network* self, const pixelMatrix* image);
 
     /**
+     * Run inference on a batch of images. This is set up for threading
+     * @param thread_void A void pointer-cast Threaded_Inference_Results instance containing all the info for executing batch inference
+     */
+    void* (*threaded_predict)(void* thread_void);
+
+    /**
      * Execute the training of the Neural Network
      * @param self The Neural Network to train
      * @param image The pixelMatrix representation of the input image
@@ -143,12 +182,29 @@ typedef struct Neural_Network {
     void (*train)(struct Neural_Network* self, const pixelMatrix* image, uint8_t label);
 
     /**
+     * Execute a batch training operation on the Neural Network
+     * @param self The Neural Network ot train
+     * @param images The MNIST_Images instance to pull from
+     * @param labels The MNIST_Labels instance to validate labels from
+     * @param num_train The number of images to train on from the dataset
+     * @param batch_size The number of images to train against in this batch
+     */
+    void (*batch_train)(struct Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t batch_size);
+
+    /**
      * Save the Neural Network to a file
      * @param self The Neural Network to export
      * @param include_biases Boolean of whether or not to include the biases in the export
      * @param filename The name of the file to export. Will export as filename.model
      */
     void (*save)(const struct Neural_Network* self, bool include_biases, const char* filename);
+
+    /**
+     * Create a copy of a Neural Network
+     * @param self The Neural Network to copy
+     * @returns Returns a copy of the Neural Network
+     */
+    struct Neural_Network* (*copy)(const struct Neural_Network* self);
 
     /**
      * Cleans up a Neural Network instance
@@ -183,8 +239,14 @@ void Neural_Network_clear(Neural_Network* target);
 floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatrix* image);
 
 /**
+ * Run inference on a batch of images. This is set up for threading
+ * @param thread_void A void pointer-cast Threaded_Inference_Results instance containing all the info for executing batch inference
+ */
+void* Neural_Network_threaded_predict(void* thread_void);
+
+/**
  * Calculate the sigmoid prime of a Matrix
- * @param target The Matrix to calculate the sigmoid prime of
+ * @param target The Matrix to calculate the sigmoid prime of -- this should already have sigmoid applied to it
  * @returns Returns a new Matrix of sigmoid prime values
  */
 floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target);
@@ -211,12 +273,29 @@ floatMatrix* Neural_Network_convert_pixelMatrix(const pixelMatrix* pixels);
 floatMatrix* Neural_Network_create_label(uint8_t label);
 
 /**
+ * Run inference against a single image and update the outputs without running softmax
+ * @param self The Neural Network to run training on
+ * @param flat_image The image (already flat and in floatMatrix format) to run inference on
+ */
+void Neural_Network_training_predict(Neural_Network* self, const floatMatrix* flat_image);
+
+/**
  * Execute the training of the Neural Network
  * @param self The Neural Network to train
  * @param image The pixelMatrix representation of the input image
  * @param label The uint8_t label for the corresponding image
  */
 void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_t label);
+
+/**
+ * Execute a batch of training
+ * @param self The Neural Network ot train
+ * @param images The MNIST_Images instance to pull from
+ * @param labels The MNIST_Labels instance to validate labels from
+ * @param num_train The number of images to train on from the dataset
+ * @param batch_size The number of images to train against in this batch
+ */
+void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t batch_size);
 
 /**
  * Save the Neural Network to a file
@@ -231,6 +310,36 @@ void Neural_Network_save(const Neural_Network* self, bool include_biases, const 
  * @param filename The filename of the Neural Network to import
  */
 Neural_Network* import_Neural_Network(const char* filename);
+
+/**
+ * Create a copy of a Neural Network
+ * @param self The Neural Network to copy
+ * @returns Returns a copy of the Neural Network
+ */
+Neural_Network* Neural_Network_copy(const Neural_Network* self);
+
+/**
+ * Expand the regular bias vector to a Matrix for use with (mini)batches
+ * @param current_bias The floatMatrix containing the current bias vector
+ * @param batch_size The size of the batch, i.e. the number of copies of the vector we want in the Matrix
+ */
+floatMatrix* Neural_Network_expand_bias(const floatMatrix* current_bias, size_t batch_size);
+
+/**
+ * Cleans up Threaded Inference Result
+ */
+void Threaded_Inference_Result_clear( Threaded_Inference_Result* target);
+
+/**
+ * Allocate a Threaded Inference Result and set the basic info
+ * @param nn Neural Network to run inference on
+ * @param images Pointer to MNIST_Images
+ * @param image_start_index Start index of the images to be processed
+ * @param num_images Number of images processed by this thread
+ * @returns Returns a Threaded Inference Result and sets up the floatMatrix inside
+ */
+Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* nn, const MNIST_Images* images,
+    size_t image_start_index, size_t num_images);
 
 #endif
 

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Matrix Library in C
  * @author : Samuel Andersen
- * @version: 2024-09-18
+ * @version: 2024-09-22
  *
  * Note: see upstream for Matrix @ https://github.com/andersensam/Matrix
  * 
@@ -144,12 +144,26 @@ typedef struct MATRIX_TYPE_NAME {
     struct MATRIX_TYPE_NAME *(*add)(const struct MATRIX_TYPE_NAME *self, const struct MATRIX_TYPE_NAME *target);
 
     /**
+     * Add two Matrix instances' contents together, adding to the underlying self Matrix
+     * @param self The first Matrix to add values from
+     * @param target The second Matrix that we add
+     */
+    void (*add_o)(const struct MATRIX_TYPE_NAME *self, const struct MATRIX_TYPE_NAME *target);
+
+    /**
      * Subtract two Matrix instances' contents together
      * @param self The first Matrix to subtract values from
      * @param target The second Matrix that we subtract
      * @return Returns another Matrix instance with the result of their subtraction
      */
     struct MATRIX_TYPE_NAME *(*subtract)(const struct MATRIX_TYPE_NAME *self, const struct MATRIX_TYPE_NAME *target);
+
+    /**
+     * Subtract two Matrix instances' contents, modifying the self Matrix
+     * @param self The first Matrix to subtract values from
+     * @param target The second Matrix that we subtract
+     */
+    void (*subtract_o)(const struct MATRIX_TYPE_NAME *self, const struct MATRIX_TYPE_NAME *target);
 
     /**
      * Scale a Matrix by a value
@@ -160,6 +174,13 @@ typedef struct MATRIX_TYPE_NAME {
     struct MATRIX_TYPE_NAME *(*scale)(const struct MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar);
 
     /**
+     * Scale a Matrix by a value, scaling directly on the original Matrix
+     * @param target The Matrix to pull values from
+     * @param scalar The value to scale by
+     */
+    void (*scale_o)(const struct MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar);
+
+    /**
      * Add a scalar to a Matrix
      * @param target The Matrix to pull values from
      * @param scalar The value to add
@@ -168,12 +189,26 @@ typedef struct MATRIX_TYPE_NAME {
     struct MATRIX_TYPE_NAME *(*add_scalar)(const struct MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar);
 
     /**
+     * Add a scalar to a Matrix, adding directly to the underlying Matrix
+     * @param target The Matrix to pull values from
+     * @param scalar The value to add
+     */
+    void (*add_scalar_o)(const struct MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar);
+
+    /**
      * Apply a function to a Matrix
      * @param target The Matrix we want to apply a function to
      * @param func A function pointer that we want to use. The pointer must return MATRIX_TYPE
      * @returns Returns a new Matrix with the function applied to it
      */
     struct MATRIX_TYPE_NAME *(*apply)(const struct MATRIX_TYPE_NAME *target, MATRIX_TYPE (*func)(MATRIX_TYPE));
+
+    /**
+     * Apply a function to a Matrix, modifying the target Matrix itself
+     * @param target The Matrix we want to apply a function to
+     * @param func A function pointer that we want to use. The pointer must return MATRIX_TYPE
+     */
+    void (*apply_o)(const struct MATRIX_TYPE_NAME *target, MATRIX_TYPE (*func)(MATRIX_TYPE));
 
     /**
      * Apply a function to a Matrix, containing two arguments
@@ -191,6 +226,13 @@ typedef struct MATRIX_TYPE_NAME {
      * @return Returns another Matrix instance with the products of their values
      */
     struct MATRIX_TYPE_NAME *(*multiply)(const struct MATRIX_TYPE_NAME *self, const struct MATRIX_TYPE_NAME *target);
+
+    /**
+     * Multiply two Matrix instances' contents together, storing in Matrix self
+     * @param self The first Matrix to multiply
+     * @param target The second Matrix that multiply by
+     */
+    void (*multiply_o)(const struct MATRIX_TYPE_NAME *self, const struct MATRIX_TYPE_NAME *target);
 
     /**
      * Populate a Matrix with a specific value
@@ -323,12 +365,26 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(transpose)(const MATRIX_TYPE_NAME *target);
 MATRIX_TYPE_NAME *MATRIX_METHOD(add)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target);
 
 /**
+ * Add two Matrix instances' contents together, adding to the underlying self Matrix
+ * @param self The first Matrix to add values from
+ * @param target The second Matrix that we add
+ */
+void MATRIX_METHOD(add_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target);
+
+/**
  * Subtract two Matrix instances' contents together
  * @param self The first Matrix to subtract values from
  * @param target The second Matrix that we subtract
  * @return Returns another Matrix instance with the result of their subtraction
  */
 MATRIX_TYPE_NAME *MATRIX_METHOD(subtract)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target);
+
+/**
+ * Subtract two Matrix instances' contents, modifying the self Matrix
+ * @param self The first Matrix to subtract values from
+ * @param target The second Matrix that we subtract
+ */
+void MATRIX_METHOD(subtract_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target);
 
 /**
  * Scale a Matrix by a value
@@ -339,6 +395,13 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(subtract)(const MATRIX_TYPE_NAME *self, const MA
 MATRIX_TYPE_NAME *MATRIX_METHOD(scale)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar);
 
 /**
+ * Scale a Matrix by a value, scaling directly on the original Matrix
+ * @param target The Matrix to pull values from
+ * @param scalar The value to scale by
+ */
+void MATRIX_METHOD(scale_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar);
+
+/**
  * Add a scalar to a Matrix
  * @param target The Matrix to pull values from
  * @param scalar The value to add
@@ -347,12 +410,26 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(scale)(const MATRIX_TYPE_NAME *target, MATRIX_TY
 MATRIX_TYPE_NAME *MATRIX_METHOD(add_scalar)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar);
 
 /**
+ * Add a scalar to a Matrix, adding directly to the underlying Matrix
+ * @param target The Matrix to pull values from
+ * @param scalar The value to add
+ */
+void MATRIX_METHOD(add_scalar_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar);
+
+/**
  * Apply a function to a Matrix
  * @param target The Matrix we want to apply a function to
  * @param func A function pointer that we want to use. The pointer must return MATRIX_TYPE
  * @returns Returns a new Matrix with the function applied to it
  */
 MATRIX_TYPE_NAME *MATRIX_METHOD(apply)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE (*func)(MATRIX_TYPE));
+
+/**
+ * Apply a function to a Matrix, modifying the target Matrix itself
+ * @param target The Matrix we want to apply a function to
+ * @param func A function pointer that we want to use. The pointer must return MATRIX_TYPE
+ */
+void MATRIX_METHOD(apply_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE (*func)(MATRIX_TYPE));
 
 /**
  * Apply a function to a Matrix, containing two arguments
@@ -370,6 +447,13 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(apply_second)(const MATRIX_TYPE_NAME *target, MA
  * @return Returns another Matrix instance with the products of their values
  */
 MATRIX_TYPE_NAME *MATRIX_METHOD(multiply)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target);
+
+/**
+ * Multiply two Matrix instances' contents together, keeping contents in Matrix self
+ * @param self The first Matrix to multiply
+ * @param target The second Matrix that multiply by
+ */
+void MATRIX_METHOD(multiply_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target);
 
 /**
  * Function to allocate a Matrix of any given type. We define this last to get all the right
