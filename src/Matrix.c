@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Matrix Library in C
  * @author : Samuel Andersen
- * @version: 2024-09-18
+ * @version: 2024-09-25
  *
  * Note: see upstream for Matrix @ https://github.com/andersensam/Matrix
  * 
@@ -155,37 +155,20 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(dot)(const MATRIX_TYPE_NAME *self, const MATRIX_
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(self->num_rows, target->num_cols);
     MATRIX_TYPE sum = 0;
 
-    // Prepare to fetch the rows and columns for each Matrix
-    MATRIX_TYPE_NAME *row = NULL;
-    MATRIX_TYPE_NAME *col = NULL;
-
-    // Start iterating over the rows and columns of the result Matrix
+    // Iterate over the expected rows of the dot Matrix
     for (size_t i = 0; i < result->num_rows; ++i) {
-        
-        // Fetch the row from the first Matrix
-        row = self->get_row(self, i);
 
         for (size_t j = 0; j < result->num_cols; ++j) {
-            
-            // Fetch the column from the second Matrix
-            col = target->get_col(target, j);
 
-            // For each element, multiply and add the sum
-            for (size_t k = 0; k < row->num_cols; ++k) {
+            // Sum the multiplications of the individual elements from self and target
+            for (size_t k = 0; k < self->num_cols; ++k) {
 
-                // Get coordinates (0, k) and (k, 0) per the different orientations
-                sum += row->get(row, 0, k) * col->get(col, k, 0);
+                sum += self->data[i][k] * target->data[k][j];
             }
 
-            // Store the sum in the result Matrix with coordinates i, j
-            result->set(result, i, j, sum);
-
-            // Ensure we clean up before proceeding
+            result->data[i][j] = sum;
             sum = 0;
-            col->clear(col);
         }
-
-        row->clear(row);
     }
 
     return result;
@@ -451,6 +434,34 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(add)(const MATRIX_TYPE_NAME *self, const MATRIX_
 }
 
 /**
+ * Add two Matrix instances' contents together, adding to the underlying self Matrix
+ * @param self The first Matrix to add values from
+ * @param target The second Matrix that we add
+ */
+void MATRIX_METHOD(add_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target) {
+
+    if (self == NULL || target == NULL) { 
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot add_o\n"); }
+        return;
+    }
+
+    if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot add_o\n"); }
+        return;
+    }
+
+    for (size_t i = 0; i < self->num_rows; ++i) {
+
+        for (size_t j = 0; j < self->num_cols; ++j) {
+
+            self->data[i][j] += target->data[i][j];
+        }
+    }
+}
+
+/**
  * Subtract two Matrix instances' contents together
  * @param self The first Matrix to subtract values from
  * @param target The second Matrix that we subtract
@@ -490,6 +501,34 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(subtract)(const MATRIX_TYPE_NAME *self, const MA
 }
 
 /**
+ * Subtract two Matrix instances' contents, modifying the self Matrix
+ * @param self The first Matrix to subtract values from
+ * @param target The second Matrix that we subtract
+ */
+void MATRIX_METHOD(subtract_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target) {
+
+    if (self == NULL || target == NULL) { 
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot subtract_o\n"); }
+        return;
+    }
+
+    if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot subtract_o\n"); }
+        return;
+    }
+
+    for (size_t i = 0; i < self->num_rows; ++i) {
+
+        for (size_t j = 0; j < self->num_cols; ++j) {
+
+            self->data[i][j] -= target->data[i][j];
+        }
+    }
+}
+
+/**
  * Scale a Matrix by a value
  * @param target The Matrix to pull values from
  * @param scalar The value to scale by
@@ -520,6 +559,30 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(scale)(const MATRIX_TYPE_NAME *target, MATRIX_TY
     }
 
     return result;
+}
+
+/**
+ * Scale a Matrix by a value, scaling directly on the original Matrix
+ * @param target The Matrix to pull values from
+ * @param scalar The value to scale by
+ */
+void MATRIX_METHOD(scale_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar) {
+
+    if (!MATRIX_METHOD(exists)(target, 0, 0)) {
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to scale_o\n"); }
+        return;
+    }
+
+    for (size_t i = 0; i < target->num_rows; ++i) {
+
+        for (size_t j = 0; j < target->num_cols; ++j) {
+
+            target->data[i][j] *= scalar;
+        }
+    }
+
+    return;
 }
 
 /**
@@ -556,6 +619,30 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(add_scalar)(const MATRIX_TYPE_NAME *target, MATR
 }
 
 /**
+ * Add a scalar to a Matrix, adding directly to the underlying Matrix
+ * @param target The Matrix to pull values from
+ * @param scalar The value to add
+ */
+void MATRIX_METHOD(add_scalar_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar) {
+
+    if (!MATRIX_METHOD(exists)(target, 0, 0)) {
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to add_scalar_o\n"); }
+        return;
+    }
+
+    for (size_t i = 0; i < target->num_rows; ++i) {
+
+        for (size_t j = 0; j < target->num_cols; ++j) {
+
+            target->data[i][j] += scalar;
+        }
+    }
+
+    return;
+}
+
+/**
  * Apply a function to a Matrix
  * @param target The Matrix we want to apply a function to
  * @param func A function pointer that we want to use. The pointer must return MATRIX_TYPE
@@ -586,6 +673,30 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(apply)(const MATRIX_TYPE_NAME *target, MATRIX_TY
     }
 
     return result;
+}
+
+/**
+ * Apply a function to a Matrix, modifying the target Matrix itself
+ * @param target The Matrix we want to apply a function to
+ * @param func A function pointer that we want to use. The pointer must return MATRIX_TYPE
+ */
+void MATRIX_METHOD(apply_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE (*func)(MATRIX_TYPE)) {
+
+    if (!MATRIX_METHOD(exists)(target, 0, 0)) {
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to apply_o\n"); }
+        return;
+    }
+
+    for (size_t i = 0; i < target->num_rows; ++i) {
+
+        for (size_t j = 0; j < target->num_cols; ++j) {
+
+            target->data[i][j] = (*func)(target->data[i][j]);
+        }
+    }
+
+    return;
 }
 
 /**
@@ -661,6 +772,38 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(multiply)(const MATRIX_TYPE_NAME *self, const MA
     }
 
     return result;
+}
+
+/**
+ * Multiply two Matrix instances' contents together, keeping contents in Matrix self
+ * @param self The first Matrix to multiply
+ * @param target The second Matrix that multiply by
+ */
+void MATRIX_METHOD(multiply_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *target) {
+
+    if (self == NULL || target == NULL) { 
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot multiply_o\n"); }
+        return;
+    }
+
+    if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
+
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot multiply_o. [%zu x %zu] != [%zu x %zu]\n",
+            self->num_rows, self->num_cols, target->num_rows, target->num_cols); }
+        
+        return;
+    }
+
+    for (size_t i = 0; i < self->num_rows; ++i) {
+
+        for (size_t j = 0; j < self->num_cols; ++j) {
+
+            self->data[i][j] *= target->data[i][j];
+        }
+    }
+
+    return;
 }
 
 /**
@@ -854,12 +997,18 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(allocate)(size_t desired_rows, size_t desired_co
     target->flatten = MATRIX_METHOD(flatten);
     target->transpose = MATRIX_METHOD(transpose);
     target->add = MATRIX_METHOD(add);
+    target->add_o = MATRIX_METHOD(add_o);
     target->subtract = MATRIX_METHOD(subtract);
+    target->subtract_o = MATRIX_METHOD(subtract_o);
     target->scale = MATRIX_METHOD(scale);
+    target->scale_o = MATRIX_METHOD(scale_o);
     target->add_scalar = MATRIX_METHOD(add_scalar);
+    target->add_scalar_o = MATRIX_METHOD(add_scalar_o);
     target->apply = MATRIX_METHOD(apply);
+    target->apply_o = MATRIX_METHOD(apply_o);
     target->apply_second = MATRIX_METHOD(apply_second);
     target->multiply = MATRIX_METHOD(multiply);
+    target->multiply_o = MATRIX_METHOD(multiply_o);
     target->populate = MATRIX_METHOD(populate);
     target->copy = MATRIX_METHOD(copy);
     target->sum = MATRIX_METHOD(sum);

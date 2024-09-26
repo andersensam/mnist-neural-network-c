@@ -2,7 +2,7 @@
 
 MKDIR_P = mkdir -p
 RM_RF = rm -rf
-CFLAGS = --std=c11
+CFLAGS = --std=c99
 OPTIMIZATIONS = -O3
 LDFLAGS = -lm -lpthread
 DEBUG = -Wall -Wextra -Wpedantic -g

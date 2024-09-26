@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-22
+ * @version: 2024-09-25
  *
  * General Notes:
  *
@@ -76,6 +76,7 @@ typedef struct Neural_Network_Layer {
     floatMatrix* outputs;
     floatMatrix* errors;
     floatMatrix* new_weights;
+    floatMatrix* z;
 
     /* Methods */
 
@@ -185,9 +186,10 @@ typedef struct Neural_Network {
      * @param self The Neural Network ot train
      * @param images The MNIST_Images instance to pull from
      * @param labels The MNIST_Labels instance to validate labels from
+     * @param num_train The number of images to train on from the dataset
      * @param batch_size The number of images to train against in this batch
      */
-    void (*batch_train)(struct Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t batch_size);
+    void (*batch_train)(struct Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t batch_size);
 
     /**
      * Save the Neural Network to a file
@@ -244,7 +246,7 @@ void* Neural_Network_threaded_predict(void* thread_void);
 
 /**
  * Calculate the sigmoid prime of a Matrix
- * @param target The Matrix to calculate the sigmoid prime of
+ * @param target The Matrix to calculate the sigmoid prime of -- this should already have sigmoid applied to it
  * @returns Returns a new Matrix of sigmoid prime values
  */
 floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target);
@@ -273,9 +275,9 @@ floatMatrix* Neural_Network_create_label(uint8_t label);
 /**
  * Run inference against a single image and update the outputs without running softmax
  * @param self The Neural Network to run training on
- * @param image The image to run inference on
+ * @param flat_image The image (already flat and in floatMatrix format) to run inference on
  */
-void Neural_Network_training_predict(Neural_Network* self, const pixelMatrix* image);
+void Neural_Network_training_predict(Neural_Network* self, const floatMatrix* flat_image);
 
 /**
  * Execute the training of the Neural Network
@@ -290,9 +292,10 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
  * @param self The Neural Network ot train
  * @param images The MNIST_Images instance to pull from
  * @param labels The MNIST_Labels instance to validate labels from
+ * @param num_train The number of images to train on from the dataset
  * @param batch_size The number of images to train against in this batch
  */
-void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t batch_size);
+void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t batch_size);
 
 /**
  * Save the Neural Network to a file
@@ -314,6 +317,13 @@ Neural_Network* import_Neural_Network(const char* filename);
  * @returns Returns a copy of the Neural Network
  */
 Neural_Network* Neural_Network_copy(const Neural_Network* self);
+
+/**
+ * Expand the regular bias vector to a Matrix for use with (mini)batches
+ * @param current_bias The floatMatrix containing the current bias vector
+ * @param batch_size The size of the batch, i.e. the number of copies of the vector we want in the Matrix
+ */
+floatMatrix* Neural_Network_expand_bias(const floatMatrix* current_bias, size_t batch_size);
 
 /**
  * Cleans up Threaded Inference Result

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-24
+ * @version: 2024-09-25
  *
  * General Notes:
  *
@@ -200,8 +200,6 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
 
     // Define some variables we're going to use again and again in loops
     floatMatrix* layer_input = NULL;
-    floatMatrix* add_bias = NULL;
-    floatMatrix* normalized = NULL;
 
     // Setup storage for the outputs of each layer
     floatMatrix** outputs = calloc(self->num_layers, sizeof(floatMatrix*));
@@ -225,20 +223,14 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
                 outputs[i - 1]);
         }
 
-        add_bias = layer_input->add(layer_input, self->layers[i]->biases);
-
-        // We currently have layer normalization disabled, but can be turned on by uncommenting the line below
-        //normalized = Neural_Network_Layer_normalize_layer(add_bias);
-
-        // Since normalization is disabled, just copy the Matrix
-        normalized = add_bias->copy(add_bias);
+        // Add the biases to the input of the layer
+        layer_input->add_o(layer_input, self->layers[i]->biases);
 
         // Apply the sigmoid actication function and store as the layer's output
-        outputs[i] = normalized->apply(normalized, sigmoid);
+        layer_input->apply_o(layer_input, sigmoid);
 
-        add_bias->clear(add_bias);
-        layer_input->clear(layer_input);
-        normalized->clear(normalized);
+        outputs[i] = layer_input;
+        layer_input = NULL;
     }
 
     floatMatrix* final_output = Neural_Network_softmax(outputs[self->num_layers - 1]);
@@ -297,14 +289,12 @@ floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target) {
     one->populate(one, 1);
 
     // Perform 1 - target
-    floatMatrix* subtracted = one->subtract(one, target);
-    one->clear(one);
+    one->subtract_o(one, target);
 
     // Multiple the subtracted Matrix with the original
-    floatMatrix* multiplied = target->multiply(target, subtracted);
-    subtracted->clear(subtracted);
+    one->multiply_o(one, target);
 
-    return multiplied;
+    return one;
 }
 
 floatMatrix* Neural_Network_softmax(const floatMatrix* target) {
@@ -390,28 +380,18 @@ floatMatrix* Neural_Network_create_label(uint8_t label) {
     return target;
 }
 
-void Neural_Network_training_predict(Neural_Network* self, const pixelMatrix* image) {
+void Neural_Network_training_predict(Neural_Network* self, const floatMatrix* flat_image) {
 
-    if (self == NULL || image == NULL) {
+    if (self == NULL || flat_image == NULL) {
 
-        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural_Network or pixelMatrix provided to training_predict\n"); }
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural_Network or floatMatrix provided to training_predict\n"); }
     }
-
-    // Convert the image to a floatMatrix
-    floatMatrix* converted_image = Neural_Network_convert_pixelMatrix(image);
-
-    // Flatten the floatMatrix containing the image data, converting to a column vector
-    floatMatrix* flat_image = converted_image->flatten(converted_image, COLUMN);
-    converted_image->clear(converted_image);
 
     // Store the input layer's output (aka the flattened image)
     self->layers[0]->outputs = flat_image->copy(flat_image);
 
     /* Begin the feed forward part (same as inference without softmax at the end) */
     floatMatrix* hidden_inputs = NULL;
-    floatMatrix* hidden_outputs = NULL;
-    floatMatrix* add_bias = NULL;
-    floatMatrix* normalized = NULL;
 
     // For each layer, do the required transformations, skipping the input layer and output layer
     for (size_t i = 1; i < self->num_layers; ++i) {
@@ -430,26 +410,14 @@ void Neural_Network_training_predict(Neural_Network* self, const pixelMatrix* im
         }
 
         // Apply the bias before proceeding
-        add_bias = hidden_inputs->add(hidden_inputs, self->layers[i]->biases);
-
-        //normalized = Neural_Network_Layer_normalize_layer(add_bias);
-        normalized = add_bias->copy(add_bias);
+        hidden_inputs->add_o(hidden_inputs, self->layers[i]->biases);
 
         // The output of this layer is the input with the sigmoid applied
-        hidden_outputs = normalized->apply(normalized, sigmoid);
+        hidden_inputs->apply_o(hidden_inputs, sigmoid);
 
         // Copy the sigmoid outputs and store it in the layer for use later
-        self->layers[i]->outputs = hidden_outputs->copy(hidden_outputs);
-
-        hidden_outputs->clear(hidden_outputs);
-        hidden_inputs->clear(hidden_inputs);
-        add_bias->clear(add_bias);
-        normalized->clear(normalized);
+        self->layers[i]->outputs = hidden_inputs;
     }
-
-    // Clean up the converted images
-    converted_image->clear(converted_image);
-    flat_image->clear(flat_image);
 }
 
 void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_t label) {
@@ -460,7 +428,12 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
     }
 
     /* Do inference and store all the layer outputs in the respective layers */
-    Neural_Network_training_predict(self, image);
+    floatMatrix* converted_image = Neural_Network_convert_pixelMatrix(image);
+    floatMatrix* flat_image = converted_image->flatten(converted_image, COLUMN);
+    converted_image->clear(converted_image);
+
+    Neural_Network_training_predict(self, flat_image);
+    flat_image->clear(flat_image);
 
     /* Begin the backpropagation part of the training process */
 
@@ -502,6 +475,7 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
 
         // Dot
         dot = multiplied->dot(multiplied, transpose);
+        //printf("Size of dot for layer [%zu]: %zu x %zu\n", i, dot->num_rows, dot->num_cols);
 
         // Scale
         scaled = dot->scale(dot, self->learning_rate);
@@ -544,8 +518,210 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
     }
 }
 
-void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t batch_size) {
+void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t batch_size) {
 
+    if (self == NULL || images == NULL || labels == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network, MNIST_Images, or MNIST_Labels provided to batch_train\n"); }
+
+        return;
+    }
+
+    // Define variables we're going to use throughout the loops
+    floatMatrix* inputs = NULL;
+    floatMatrix* converted_image = NULL;
+    floatMatrix* flat_image = NULL;
+    floatMatrix* expanded_bias = NULL;
+    floatMatrix* sigmoid_prime = NULL;
+    floatMatrix* transpose = NULL;
+    floatMatrix* outputs = NULL;
+    floatMatrix** nabla_w = calloc(self->num_layers, sizeof(floatMatrix*));
+
+    // Initialize values across nabla_w
+    for (size_t i = 1; i < self->num_layers; ++i) {
+
+        nabla_w[i] = NULL;
+    }
+
+    // Information about the batches
+    size_t num_batches = num_train / batch_size;
+    size_t final_batch_size = num_train - (batch_size * num_batches);
+    size_t current_index = 0;
+
+    // Iterate over the number of batches, ensuring we catch the last (potentially smaller) batch
+    for (size_t i = 0; i <= num_batches; ++i) {
+
+        // Handle the last batch differently
+        if (i == num_batches) {
+
+            if (final_batch_size == 0) { continue; }
+
+            // Set up the inputs and correct outputs 
+            inputs = floatMatrix_allocate(MNIST_IMAGE_SIZE, final_batch_size);
+            outputs = floatMatrix_allocate(MNIST_LABELS, final_batch_size);
+            outputs->populate(outputs, 0);
+
+            // Insert the image data into the larger input Matrix
+            for (size_t j = 0; j < final_batch_size; ++j) {
+
+                converted_image = Neural_Network_convert_pixelMatrix(images->get(images, current_index + j));
+                flat_image = converted_image->flatten(converted_image, COLUMN);
+
+                converted_image->clear(converted_image);
+                converted_image = NULL;
+
+                for (size_t k = 0; k < flat_image->num_rows; ++k) {
+
+                    inputs->set(inputs, k, j, flat_image->get(flat_image, k, 0));
+                }
+
+                flat_image->clear(flat_image);
+                flat_image = NULL;
+
+                // Set the correct output as 1.0 in the output Matrix
+                outputs->set(outputs, labels->get(labels, current_index + j), j, 1);
+            }
+
+            // Update the bias vectors to be Matrix, ignoring the first layer of course
+            for (size_t j = 1; j < self->num_layers; ++j) {
+
+                expanded_bias = Neural_Network_expand_bias(self->layers[j]->biases, final_batch_size);
+
+                self->layers[j]->biases->clear(self->layers[j]->biases);
+                self->layers[j]->biases = expanded_bias;
+            }
+        }
+        else {
+
+            // Allocate a floatMatrix that will contain batch_size number of images
+            inputs = floatMatrix_allocate(MNIST_IMAGE_SIZE, batch_size);
+            outputs = floatMatrix_allocate(MNIST_LABELS, batch_size);
+            outputs->populate(outputs, 0);
+
+            // Insert the image data into the larger input Matrix
+            for (size_t j = 0; j < batch_size; ++j) {
+
+                converted_image = Neural_Network_convert_pixelMatrix(images->get(images, current_index + j));
+                flat_image = converted_image->flatten(converted_image, COLUMN);
+
+                converted_image->clear(converted_image);
+                converted_image = NULL;
+
+                for (size_t k = 0; k < flat_image->num_rows; ++k) {
+
+                    inputs->set(inputs, k, j, flat_image->get(flat_image, k, 0));
+                }
+
+                flat_image->clear(flat_image);
+                flat_image = NULL;
+
+                // Set the correct output as 1.0 in the output Matrix
+                outputs->set(outputs, labels->get(labels, current_index + j), j, 1);
+            }
+
+            // Update the bias vectors to be Matrix, ignoring the first layer of course
+            for (size_t j = 1; j < self->num_layers; ++j) {
+
+                expanded_bias = Neural_Network_expand_bias(self->layers[j]->biases, batch_size);
+
+                self->layers[j]->biases->clear(self->layers[j]->biases);
+                self->layers[j]->biases = expanded_bias;
+            }
+        }
+
+        /* Run inference on the Matrix of inputs and store their outputs in each layer */
+        Neural_Network_training_predict(self, inputs);
+
+        /* Begin the backpropagation component */
+        for (size_t j = self->num_layers - 1; j >= 1; --j) {
+
+            if (j == self->num_layers - 1) {
+
+                // Calculate the error between the proper labels and the predicted outputs
+                self->layers[j]->errors = outputs->subtract(outputs, self->layers[self->num_layers - 1]->outputs);
+
+            }
+            else {
+
+                // Get the error as the transpose of the next layer's weights (dot) next layer's error
+                transpose = self->layers[j + 1]->weights->transpose(self->layers[j + 1]->weights);
+                self->layers[j]->errors = transpose->dot(transpose, self->layers[j + 1]->errors);
+
+                transpose->clear(transpose);
+            }
+
+            // Sigmoid prime of the outputs
+            sigmoid_prime = Neural_Network_sigmoid_prime(self->layers[j]->outputs);
+
+            // Multiply the errors with the sigmoid prime
+            sigmoid_prime->multiply_o(sigmoid_prime, self->layers[j]->errors);
+
+            // Transpose the outputs from the last layer
+            transpose = self->layers[j - 1]->outputs->transpose(self->layers[j - 1]->outputs);
+
+            // Get the dot product of the transposed outputs and the errors * sigmoid
+            nabla_w[j] = sigmoid_prime->dot(sigmoid_prime, transpose);
+
+            sigmoid_prime->clear(sigmoid_prime);
+            transpose->clear(transpose);
+        }
+
+        /* Begin the final calculations for the new weights */
+
+        // Update the weights for each layer
+        for (size_t j = 1; j < self->num_layers; ++j) {
+
+            // Handle the last batch with special care since it may be smaller than the others
+            if (i == num_batches) {
+
+                // Divide the sum of deltas per layer by the batch size and multiply by learning rate
+                nabla_w[j]->scale_o(nabla_w[j], self->learning_rate / (float)final_batch_size);
+
+            }
+            else {
+
+                nabla_w[j]->scale_o(nabla_w[j], self->learning_rate / (float)batch_size);
+            }
+
+            // Add the processed changes to the original weights
+            self->layers[j]->weights->add_o(self->layers[j]->weights, nabla_w[j]);
+
+            // Clean up nabla_w
+            nabla_w[j]->clear(nabla_w[j]);
+            nabla_w[j] = NULL;
+
+            // Clean up errors and outputs
+            self->layers[j]->outputs->clear(self->layers[j]->outputs);
+            self->layers[j]->outputs = NULL;
+
+            self->layers[j]->errors->clear(self->layers[j]->errors);
+            self->layers[j]->errors = NULL;
+
+            // Convert the bias Matrix back to being one column wide
+            expanded_bias = self->layers[j]->biases->get_col(self->layers[j]->biases, 0);
+
+            self->layers[j]->biases->clear(self->layers[j]->biases);
+            self->layers[j]->biases = expanded_bias;
+
+            expanded_bias = NULL;
+        }
+
+        // Clean up the first layer's 'output', i.e. the image Matrix
+        self->layers[0]->outputs->clear(self->layers[0]->outputs);
+        self->layers[0]->outputs = NULL;
+
+        // Increment the current index for the next batch process
+        current_index += batch_size;
+
+        // Clean up input and output Matrix
+        inputs->clear(inputs);
+        inputs = NULL;
+
+        outputs->clear(outputs);
+        outputs = NULL;
+    }
+
+    free(nabla_w);
 }
 
 void Neural_Network_save(const Neural_Network* self, bool include_biases, const char* filename) {
@@ -1026,6 +1202,30 @@ void Threaded_Inference_Result_clear( Threaded_Inference_Result* target) {
     free(target);
 
     return;
+}
+
+floatMatrix* Neural_Network_expand_bias(const floatMatrix* current_bias, size_t batch_size) {
+
+    if (current_bias == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid bias Matrix provided to expand_bias\n"); }
+        return NULL;
+    }
+
+    floatMatrix* expanded = floatMatrix_allocate(current_bias->num_rows, batch_size);
+    float bias_value = 0;
+
+    for (size_t i = 0; i < expanded->num_rows; ++i) {
+
+        bias_value = current_bias->get(current_bias, i, 0);
+
+        for (size_t j = 0; j < expanded->num_cols; ++j) {
+
+            expanded->set(expanded, i, j, bias_value);
+        }
+    }
+
+    return expanded;
 }
 
 Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* nn, const MNIST_Images* images,

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-24
+ * @version: 2024-09-25
  *
  * General Notes:
  *
@@ -78,6 +78,59 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
     labels->clear(labels);
     images->clear(images);
     nn->clear(nn);
+
+    return;
+}
+
+void train_new_model_batched(const char* labels_path, const char* images_path, size_t num_layers, const size_t* nn_config,
+    float learning_rate, bool generate_biases, const char* model_path, size_t num_training_images, size_t batch_size, size_t epochs) {
+
+    // Load image dataset and associated labels
+    log_message("Starting to load MNIST labels");
+    MNIST_Labels* labels = init_MNIST_labels(labels_path);
+    log_message("Finished loading MNIST labels");
+
+    log_message("Starting to load MNIST images");
+    MNIST_Images* images = init_MNIST_images(images_path);
+    log_message("Finished loading MNIST images");
+
+    if (num_training_images > images->num_images) {
+
+        fprintf(stderr, "ERR: num_training_images cannot be greater than number of images in dataset\n");
+        images->clear(images);
+        labels->clear(labels);
+
+        return;
+    }
+
+    if (labels->num_labels != images->num_images) {
+
+        fprintf(stderr, "ERR: Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        images->clear(images);
+        labels->clear(labels);
+
+        return;
+    }
+
+    // Initalize the Neural Network
+    Neural_Network* nn = init_Neural_Network(num_layers, nn_config, learning_rate, generate_biases);
+
+    log_message("Starting model training");
+
+    for (size_t i = 0; i < epochs; ++i) {
+
+        nn->batch_train(nn, images, labels, num_training_images, batch_size);
+    }
+
+    log_message("Finished model training");
+
+    log_message("Saving model");
+    nn->save(nn, true, model_path);
+    log_message("Finished saving model");
+
+    nn->clear(nn);
+    labels->clear(labels);
+    images->clear(images);
 
     return;
 }
@@ -277,7 +330,7 @@ int main(int argc, char* argv[]) {
 
         /*
          * For training, expect: labels_path (2), images_path (3), learning_rate (4), include_biases (5), 
-         * num_layers (6), [layer_info] (7..n-2), model_name (n-1), num_images (n)
+         * num_layers (6), [layer_info] (7..n-3), num_images (n-2), model_name (n-1)
          */
 
         if (argc <= 9) {
@@ -304,6 +357,42 @@ int main(int argc, char* argv[]) {
 
         // Train a new model with the given parameters
         train_new_model(argv[2], argv[3], num_layers, nn_config, learning_rate, generate_biases, argv[argc - 1], (size_t)atoi(argv[argc - 2]));
+
+        free(nn_config);
+        return 0;
+    }
+    else if (strncmp(argv[1], "batch-train", 11) == 0) {
+
+        /*
+         * For training, expect: labels_path (2), images_path (3), learning_rate (4), include_biases (5), 
+         * num_layers (6), [layer_info] (7..n-5), num_images (n-4), batch_size (n-3), epochs (n-2), model_name (n - 1)
+         */
+
+        if (argc <= 10) {
+
+            fprintf(stderr, "ERR: Too few arguments provided to train\n");
+            return -1;
+        }
+
+        float learning_rate = 0;
+        sscanf(argv[4], "%f", &learning_rate);
+
+        bool generate_biases = false;
+
+        if (strncmp(argv[5], "true", 4) == 0) { generate_biases = true; }
+
+        size_t num_layers = (size_t)(atoi(argv[6]));
+        size_t* nn_config = calloc(num_layers, sizeof(size_t));
+
+        // Iterate over the number of layers and get the neuron counts for each
+        for (size_t i = 0; i < num_layers; ++i) {
+
+            nn_config[i] = (size_t)atoi(argv[i + 7]);
+        }
+
+        // Train a new model with the given parameters
+        train_new_model_batched(argv[2], argv[3], num_layers, nn_config, learning_rate, generate_biases, argv[argc - 1],
+            (size_t)atoi(argv[argc - 4]), (size_t)atoi(argv[argc - 3]), (size_t)atoi(argv[argc-2]));
 
         free(nn_config);
         return 0;
@@ -337,6 +426,10 @@ int main(int argc, char* argv[]) {
         printf("Expected usage: main train labels_path images_path learning_rate include_biases num_layers [layer_info] num_training_images model_name\n");
         printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 model.model\n\n");
         printf("This example has a learning rate of 0.1, uses biases, has 3 layers, and uses 1000 images to train on\n");
+
+        printf("Expected usage: main batch-train labels_path images_path learning_rate include_biases num_layers [layer_info] num_training_images batch_size epochs model_name\n");
+        printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 10 10 model.model\n\n");
+        printf("This example has a learning rate of 0.1, uses biases, has 3 layers,uses 1000 images to train on, with a batch size of 10, and 10 epochs\n");
 
         printf("Expected usage: main predict labels_path images_path num_predict model_path\n");
         printf("Example for predict: main predict data/labels data/images 100 model.model\n");
