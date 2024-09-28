@@ -22,6 +22,24 @@ I have tried to make the underlying code as flexible as possible, allowing for q
 
 As you may expect, the models exported from this neural network cannot be used with any other existing framework that I'm aware of. I had fun coming up with a different file format based on the [Yann LeCun MNIST dataset](https://yann.lecun.com/exdb/mnist/).
 
+### A Note on EMNIST
+
+The original MNIST dataset is relatively small and contains only digits. As the [EMNIST (Extended MNIST)](https://www.nist.gov/itl/products-and-services/emnist-dataset) dataset is available in the same binary format as the Yann LeCun MNIST dataset (linked above), we can simply point to the EMNIST datasets' labels and images to train / run inference on them.
+
+If using the digits dataset, there are no changes needed; **however**, to add in letters, `include/MNIST_Labels.h` needs to be modified. The line here must be adjusted:
+
+```
+#define MNIST_LABELS 10
+```
+
+If using the EMIST balanced dataset, change to the following:
+
+```
+#define MNIST_LABELS 47
+```
+
+No other changes are required beyond the above.
+
 ## Compilation
 
 To build the neural network, simply use `make`. By default, this will compile with `-O3`
