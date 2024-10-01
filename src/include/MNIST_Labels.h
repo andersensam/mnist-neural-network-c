@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-15
+ * @version: 2024-09-30
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -66,7 +66,7 @@ MNIST_Labels* init_MNIST_labels(const char* path);
  * @param target The MNIST_Labels instance to fetch from
  * @param index The number of the label we want to fetch
  */
-uint8_t MNIST_Labels_get(const struct MNIST_Labels* target, uint32_t index);
+uint8_t MNIST_Labels_get(const MNIST_Labels* target, uint32_t index);
 
 /**
  * Clean up a MNIST_Labels instance and free associated memorry

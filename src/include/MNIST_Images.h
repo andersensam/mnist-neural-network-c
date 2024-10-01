@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-16
+ * @version: 2024-09-30
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -74,7 +74,7 @@ MNIST_Images* init_MNIST_images(const char* path);
  * @param target The MNIST_Images instance to fetch from
  * @param index The number of the image / pixelMatrix we want to fetch
  */
-pixelMatrix* MNIST_Images_get(const struct MNIST_Images* target, uint32_t index);
+pixelMatrix* MNIST_Images_get(const MNIST_Images* target, uint32_t index);
 
 /**
  * Method to clean up a MNSIST_Images instance and free memory

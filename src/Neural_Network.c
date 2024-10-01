@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-26
+ * @version: 2024-09-30
  *
  * General Notes:
  *
@@ -20,7 +20,7 @@
 // Include the type of Matrix that we want to use
 #define MATRIX_TYPE_NAME floatMatrix
 #define MATRIX_TYPE float
-#define MATRIX_STRING "%1.28f"
+#define MATRIX_STRING "%1.10f"
 #include "Matrix.c"
 
 void Neural_Network_Layer_clear(Neural_Network_Layer* target) {
@@ -62,7 +62,7 @@ Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previ
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for new Neural_Network_Layer\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Persist the number of neurons
@@ -91,7 +91,7 @@ Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previ
     if (target->weights == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for weights in Neural_Network_Layer\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     if (target->biases == NULL) {
@@ -99,7 +99,7 @@ Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previ
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for biases in Neural_Network_Layer\n"); }
 
         target->weights->clear(target->weights);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < num_neurons; ++i) {
@@ -132,7 +132,7 @@ floatMatrix* Neural_Network_Layer_normalize_layer(const floatMatrix* target) {
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid floatMatrix provided to normalize\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     float mean = target->sum(target) / target->num_rows;
@@ -164,7 +164,7 @@ Neural_Network_Layer* Neural_Network_Layer_copy(const Neural_Network_Layer* self
     if (self == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network Layer provided to copy\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Take advantage of the import function to just allocate memory and setup the function pointers
@@ -188,7 +188,7 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
     if (self == NULL || image == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural_Network or pixelMatrix provided to predict\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Create a floatMatrix to store the pixelMatrix data
@@ -207,7 +207,7 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
     if (outputs == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for output storage in predict\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 1; i < self->num_layers; ++i) {
@@ -251,7 +251,7 @@ void* Neural_Network_threaded_predict(void* thread_void) {
     if (thread_void == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Threaded_Inference_Results provided to batch_predict\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     Threaded_Inference_Result* thread = (Threaded_Inference_Result*)thread_void;
@@ -280,7 +280,7 @@ floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target) {
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid floatMatrix provided to sigmoid_prime\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     floatMatrix* one = floatMatrix_allocate(target->num_rows, target->num_cols);
@@ -302,7 +302,7 @@ floatMatrix* Neural_Network_softmax(const floatMatrix* target) {
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid floatMatrix provided to softmax\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     float total = 0;
@@ -320,7 +320,7 @@ floatMatrix* Neural_Network_softmax(const floatMatrix* target) {
     if (result == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for new floatMatrix in softmax\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -339,7 +339,7 @@ floatMatrix* Neural_Network_convert_pixelMatrix(const pixelMatrix* pixels) {
     if (pixels == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid pixelMatrix provided for conversion\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     floatMatrix* target = floatMatrix_allocate(pixels->num_rows, pixels->num_cols);
@@ -347,7 +347,7 @@ floatMatrix* Neural_Network_convert_pixelMatrix(const pixelMatrix* pixels) {
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate floatMatrix for pixelMatrix conversion\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < pixels->num_rows; ++i) {
@@ -368,7 +368,7 @@ floatMatrix* Neural_Network_create_label(uint8_t label) {
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for label floatMatrix\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Zero out the values of the floatMatrix
@@ -385,6 +385,7 @@ void Neural_Network_training_predict(Neural_Network* self, const floatMatrix* fl
     if (self == NULL || flat_image == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural_Network or floatMatrix provided to training_predict\n"); }
+        exit(EXIT_FAILURE);
     }
 
     // Store the input layer's output (aka the flattened image)
@@ -425,6 +426,7 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
     if (self == NULL || image == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural_Network or pixelMatrix provided to train\n"); }
+        exit(EXIT_FAILURE);
     }
 
     /* Do inference and store all the layer outputs in the respective layers */
@@ -492,6 +494,10 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
         self->layers[i]->weights = self->layers[i]->new_weights;
         self->layers[i]->new_weights = NULL;
 
+        // Update the biases too, now that we're done with the errors we can scale by learning rate before cleaning up
+        self->layers[i]->errors->scale_o(self->layers[i]->errors, self->learning_rate);
+        self->layers[i]->biases->add_o(self->layers[i]->biases, self->layers[i]->errors);
+
         self->layers[i]->outputs->clear(self->layers[i]->outputs);
         self->layers[i]->outputs = NULL;
 
@@ -514,8 +520,7 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
     if (self == NULL || images == NULL || labels == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network, MNIST_Images, or MNIST_Labels provided to batch_train\n"); }
-
-        return;
+        exit(EXIT_FAILURE);
     }
 
     // Define variables we're going to use throughout the loops
@@ -526,12 +531,15 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
     floatMatrix* sigmoid_prime = NULL;
     floatMatrix* transpose = NULL;
     floatMatrix* outputs = NULL;
+    floatMatrix* ones = NULL;
     floatMatrix** nabla_w = calloc(self->num_layers, sizeof(floatMatrix*));
+    floatMatrix** nabla_b = calloc(self->num_layers, sizeof(floatMatrix*));
 
     // Initialize values across nabla_w
     for (size_t i = 1; i < self->num_layers; ++i) {
 
         nabla_w[i] = NULL;
+        nabla_b[i] = NULL;
     }
 
     // Information about the batches
@@ -551,6 +559,10 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
             inputs = floatMatrix_allocate(MNIST_IMAGE_SIZE, final_batch_size);
             outputs = floatMatrix_allocate(MNIST_LABELS, final_batch_size);
             outputs->populate(outputs, 0);
+
+            // Set up a Matrix of ones for getting the bias error
+            ones = floatMatrix_allocate(final_batch_size, 1);
+            ones->populate(ones, 1);
 
             // Insert the image data into the larger input Matrix
             for (size_t j = 0; j < final_batch_size; ++j) {
@@ -588,6 +600,10 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
             inputs = floatMatrix_allocate(MNIST_IMAGE_SIZE, batch_size);
             outputs = floatMatrix_allocate(MNIST_LABELS, batch_size);
             outputs->populate(outputs, 0);
+
+            // Set up a Matrix of ones for getting the bias error
+            ones = floatMatrix_allocate(batch_size, 1);
+            ones->populate(ones, 1);
 
             // Insert the image data into the larger input Matrix
             for (size_t j = 0; j < batch_size; ++j) {
@@ -653,6 +669,9 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
             // Get the dot product of the transposed outputs and the errors * sigmoid
             nabla_w[j] = sigmoid_prime->dot(sigmoid_prime, transpose);
 
+            // Get the sum of the errors for processing later
+            nabla_b[j] = self->layers[j]->errors->dot(self->layers[j]->errors, ones);
+
             sigmoid_prime->clear(sigmoid_prime);
             transpose->clear(transpose);
         }
@@ -667,11 +686,13 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
 
                 // Divide the sum of deltas per layer by the batch size and multiply by learning rate
                 nabla_w[j]->scale_o(nabla_w[j], self->learning_rate / (float)final_batch_size);
+                nabla_b[j]->scale_o(nabla_b[j], self->learning_rate / (float)final_batch_size);
 
             }
             else {
 
                 nabla_w[j]->scale_o(nabla_w[j], self->learning_rate / (float)batch_size);
+                nabla_b[j]->scale_o(nabla_b[j], self->learning_rate / (float)batch_size);
             }
 
             // Add the processed changes to the original weights
@@ -693,8 +714,12 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
 
             self->layers[j]->biases->clear(self->layers[j]->biases);
             self->layers[j]->biases = expanded_bias;
+            self->layers[j]->biases->add_o(self->layers[j]->biases, nabla_b[j]);
 
             expanded_bias = NULL;
+
+            nabla_b[j]->clear(nabla_b[j]);
+            nabla_b[j] = NULL;
         }
 
         // Clean up the first layer's 'output', i.e. the image Matrix
@@ -710,9 +735,13 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
 
         outputs->clear(outputs);
         outputs = NULL;
+
+        ones->clear(ones);
+        ones = NULL;
     }
 
     free(nabla_w);
+    free(nabla_b);
 }
 
 void Neural_Network_save(const Neural_Network* self, bool include_biases, const char* filename) {
@@ -720,7 +749,7 @@ void Neural_Network_save(const Neural_Network* self, bool include_biases, const 
     if (self == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network to save\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     FILE* model = fopen(filename, "w");
@@ -728,7 +757,7 @@ void Neural_Network_save(const Neural_Network* self, bool include_biases, const 
     if (model == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to open file %s to save model\n", filename); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     uint32_t header_magic = NN_HEADER_MAGIC;
@@ -817,7 +846,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
     if (filename == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid char* for filename provided to import\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Open the path to the model file
@@ -826,7 +855,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
     if (model == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to read model file\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     uint32_t header_magic = 0;
@@ -837,7 +866,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to read header info from model\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     if (header_magic != NN_HEADER_MAGIC) {
@@ -845,7 +874,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid magic number in model header\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Get ready to get the learning rate for the model
@@ -856,7 +885,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to read learning rate from model\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Check to see if biases were included in the model, either 0 for no, or 1 for yes
@@ -867,7 +896,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to read bias info from model\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Get the number of layers in the model
@@ -878,7 +907,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to read number of layers from model\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Allocate an array of size_t to get the size of the layers
@@ -889,7 +918,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to read layer info\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Setup a buffer to grab values from the file without making new variables
@@ -900,7 +929,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to read weight magic number\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     if (buffer != NN_WEIGHTS_MAGIC) {
@@ -908,7 +937,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid weight magic number\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Once we have all the information, create a new Neural Network
@@ -919,7 +948,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the Neural Network\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Much of this should look the same as allocate_Neural_Network
@@ -942,7 +971,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for layers\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Special processing for the input layer, since it has no weights or biases
@@ -965,7 +994,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
             if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Error reading model layer %zu\n", i); }
 
             fclose(model);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         if (buffer != NN_WEIGHT_BEGIN) {
@@ -973,7 +1002,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
             if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid start weights value for layer %zu\n", i); }
 
             fclose(model);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         // Allocate a new floatMatrix for the weights of this layer
@@ -988,7 +1017,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
                     if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Error reading (%zu, %zu) for model layer %zu\n", j, k, i); }
 
                     fclose(model);
-                    return NULL;
+                    exit(EXIT_FAILURE);
                 }
 
                 // Copy the float value of the weight to the new floatMatrix
@@ -1001,7 +1030,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
             if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Error reading end of model layer %zu\n", i); }
 
             fclose(model);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         if (buffer != NN_WEIGHT_END) {
@@ -1009,7 +1038,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
             if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid end weights value for layer %zu\n", i); }
 
             fclose(model);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         // Persist the weights to the layer directly
@@ -1032,7 +1061,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to read bias magic number\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     if (buffer != NN_BIASES_MAGIC) {
@@ -1040,7 +1069,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid bias magic number\n"); }
 
         fclose(model);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Store the layer's biases somewhere
@@ -1053,7 +1082,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
             if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Error reading bias for layer %zu\n", i); }
 
             fclose(model);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         if (buffer != NN_BIAS_BEGIN) {
@@ -1061,7 +1090,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
             if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid start bias value for layer %zu\n", i); }
 
             fclose(model);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         current_biases = floatMatrix_allocate(layer_info[i], 1);
@@ -1074,7 +1103,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
                 if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Error reading (%zu, 0) for bias layer %zu\n", j, i); }
 
                 fclose(model);
-                return NULL;
+                exit(EXIT_FAILURE);
             }
 
             current_biases->set(current_biases, j, 0, float_buffer);
@@ -1085,7 +1114,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
             if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Error reading end of bias layer %zu\n", i); }
 
             fclose(model);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         if (buffer != NN_BIAS_END) {
@@ -1093,7 +1122,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
             if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid end biases value for layer %zu\n", i); }
 
             fclose(model);
-            return NULL;
+            exit(EXIT_FAILURE);
         }
 
         target->layers[i]->biases = current_biases;
@@ -1112,7 +1141,7 @@ Neural_Network* init_Neural_Network(size_t num_layers, const size_t* layer_info,
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for new Neural_Network\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     target->num_layers = num_layers;
@@ -1143,7 +1172,7 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self) {
     if (self == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network provided to copy\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     Neural_Network* target = malloc(sizeof(Neural_Network));
@@ -1151,7 +1180,7 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self) {
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for Neural Network copy\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     target->num_layers = self->num_layers;
@@ -1164,7 +1193,7 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self) {
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for Neural Network Layer array in copy\n"); }
 
         free(target);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_layers; ++i) {
@@ -1200,7 +1229,7 @@ floatMatrix* Neural_Network_expand_bias(const floatMatrix* current_bias, size_t 
     if (current_bias == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid bias Matrix provided to expand_bias\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     floatMatrix* expanded = floatMatrix_allocate(current_bias->num_rows, batch_size);
@@ -1225,7 +1254,7 @@ Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* 
     if (nn == NULL || images == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid Neural Network or MNIST_Images passed to init_Threaded_Inference_Result\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     Threaded_Inference_Result* target = malloc(sizeof(Threaded_Inference_Result));
@@ -1233,7 +1262,7 @@ Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* 
     if (target == NULL) {
 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate Threaded_Inference_Result\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     target->nn = nn;
@@ -1248,7 +1277,7 @@ Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* 
         if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Unable to allocate floatMatrix for Threaded_Inference_Result\n"); }
 
         free(target);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     target->clear = Threaded_Inference_Result_clear;

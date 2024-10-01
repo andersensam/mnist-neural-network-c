@@ -61,12 +61,12 @@ The main binary has three options available (with suboptions for train and predi
 As noted above, the first option is to train a new neural network from scratch. To get started, examine the following syntax:
 
 ```
-./target/main train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <model name>
+./target/main train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <epochs> <model name>
 ```
 
 A complete example is listed below:
 ```
-./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 small_100.model
+./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 2 small_100.model
 ```
 
 The example reveals that: we want to train a new model, using a **learning rate** of 0.1, we want to use biases, there are **3** total layers (including input). The first layer has 784 neurons, the second has 100, and the output has 10. We want to train on a subset of 1500 images and we want to export the model to file `small_100.model`.
@@ -74,7 +74,7 @@ The example reveals that: we want to train a new model, using a **learning rate*
 Running the example above produces the following output:
 
 ```
-$ ./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 small_100.model
+$ ./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 2 small_100.model
 
 [2024-09-18 23:32:59]: Starting to load MNIST labels
 [2024-09-18 23:32:59]: Finished loading MNIST labels

@@ -25,7 +25,7 @@ MNIST_Labels* init_MNIST_labels(const char* path) {
     if (label_file == NULL) {
 
         if (MNIST_LABELS_DEBUG) { fprintf(stderr, "ERR: Unable to open the path to the MNIST labels\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // We want to read in two values at once here to avoid using fread twice
@@ -37,7 +37,7 @@ MNIST_Labels* init_MNIST_labels(const char* path) {
         if (MNIST_LABELS_DEBUG) { fprintf(stderr, "ERR: Unable to read headers from MNIST label file\n"); }
 
         fclose(label_file);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // The first entry in the array is used for the magic number; the second is for the number of items
@@ -46,7 +46,7 @@ MNIST_Labels* init_MNIST_labels(const char* path) {
         if (MNIST_LABELS_DEBUG) { fprintf(stderr, "ERR: Mistmatched magic number in the MNIST label file header\n"); }
         
         fclose(label_file);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Allocate the memory to store the labels
@@ -57,7 +57,7 @@ MNIST_Labels* init_MNIST_labels(const char* path) {
         if (MNIST_LABELS_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory to create MNIST_Labels\n"); }
         
         fclose(label_file);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Persist the flipped number of items before reading in
@@ -72,7 +72,7 @@ MNIST_Labels* init_MNIST_labels(const char* path) {
 
         free(target);
         fclose(label_file);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Read the labels from the file
@@ -83,7 +83,7 @@ MNIST_Labels* init_MNIST_labels(const char* path) {
         free(target->labels);
         free(target);
         fclose(label_file);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Ensure we clean up the file reference
@@ -95,18 +95,18 @@ MNIST_Labels* init_MNIST_labels(const char* path) {
     return target;
 }
 
-uint8_t MNIST_Labels_get(const struct MNIST_Labels* target, uint32_t index) {
+uint8_t MNIST_Labels_get(const MNIST_Labels* target, uint32_t index) {
 
     if (target == NULL) {
 
         if (MNIST_LABELS_DEBUG) { fprintf(stderr, "ERR: Invalid MNIST_Labels pointer provided. Returning 0\n"); }
-        return (uint8_t)0;
+        exit(EXIT_FAILURE);
     }
 
     if (index >= target->num_labels) {
 
         if (MNIST_LABELS_DEBUG) { fprintf(stderr, "ERR: Invalid label index provided. Got %u and expecting max %u\n", index, target->num_labels); }
-        return (uint8_t)0;
+        exit(EXIT_FAILURE);
     }
 
     return target->labels[index];

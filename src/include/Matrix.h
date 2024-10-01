@@ -8,10 +8,8 @@
  *                                                                                                               
  * Project: Matrix Library in C
  * @author : Samuel Andersen
- * @version: 2024-09-22
+ * @version: 2024-09-30
  *
- * Note: see upstream for Matrix @ https://github.com/andersensam/Matrix
- * 
  */
 
 /* Include the standard things we want for the Matrix header before doing the part that repeats */
@@ -273,7 +271,7 @@ typedef struct MATRIX_TYPE_NAME {
  * @param target_col Column to access / set
  * @returns True if record exists, False if it does not
  */
-bool MATRIX_METHOD(exists)(const struct MATRIX_TYPE_NAME *target, size_t target_row, size_t target_col);
+bool MATRIX_METHOD(exists)(const MATRIX_TYPE_NAME *target, size_t target_row, size_t target_col);
 
 /**
  * Function to clean up a Matrix if it's no longer needed
@@ -313,7 +311,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(dot)(const MATRIX_TYPE_NAME *self, const MATRIX_
  * @param target_row The row we want to extract
  * @return Returns a "vector" / array of the Matrix type
  */
-MATRIX_TYPE_NAME *MATRIX_METHOD(get_row)(const struct MATRIX_TYPE_NAME *target, size_t target_row);
+MATRIX_TYPE_NAME *MATRIX_METHOD(get_row)(const MATRIX_TYPE_NAME *target, size_t target_row);
 
 /**
  * Get a col of a Matrix
@@ -321,7 +319,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(get_row)(const struct MATRIX_TYPE_NAME *target, 
  * @param target_col The col we want to extract
  * @return A new Matrix containing the contents of the target column. Must be cleaned up after
  */
-MATRIX_TYPE_NAME *MATRIX_METHOD(get_col)(const struct MATRIX_TYPE_NAME *target, size_t target_col);
+MATRIX_TYPE_NAME *MATRIX_METHOD(get_col)(const MATRIX_TYPE_NAME *target, size_t target_col);
 
 /**
  * Print the entire Matrix
