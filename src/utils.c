@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-18
+ * @version: 2024-09-30
  *
  * General Notes:
  *
@@ -18,8 +18,6 @@
 #include "include/utils.h"
 
 float sigmoid(float z) {
-
-    //printf("sigmoid input %f\n", z);
 
     return 1.0f / (1 + exp(-1 * z));
 }

@@ -32,7 +32,7 @@
  * @param target_col Column to access / set
  * @returns True if record exists, False if it does not
  */
-bool MATRIX_METHOD(exists)(const struct MATRIX_TYPE_NAME *target, size_t target_row, size_t target_col) {
+bool MATRIX_METHOD(exists)(const MATRIX_TYPE_NAME *target, size_t target_row, size_t target_col) {
     
     // Verify that the target is not NULL
     if (target == NULL) {
@@ -138,7 +138,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(dot)(const MATRIX_TYPE_NAME *self, const MATRIX_
     if (self == NULL || target == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot calculate dot product\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     if (self->num_cols != target->num_rows) {
@@ -149,7 +149,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(dot)(const MATRIX_TYPE_NAME *self, const MATRIX_
             fprintf(stderr, "First Matrix is [%zu x %zu], second is [%zu x %zu]\n",
                 self->num_rows, self->num_cols, target->num_rows, target->num_cols);
         }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(self->num_rows, target->num_cols);
@@ -180,13 +180,13 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(dot)(const MATRIX_TYPE_NAME *self, const MATRIX_
  * @param target_row The row we want to extract
  * @return Returns a "vector" / array of the Matrix type
  */
-MATRIX_TYPE_NAME *MATRIX_METHOD(get_row)(const struct MATRIX_TYPE_NAME *target, size_t target_row) {
+MATRIX_TYPE_NAME *MATRIX_METHOD(get_row)(const MATRIX_TYPE_NAME *target, size_t target_row) {
 
     // Ensure that the target row exists inside of a valid Matrix
     if (!MATRIX_METHOD(exists)(target, target_row, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix / row provided to get_row\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(1, target->num_cols);
@@ -205,13 +205,13 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(get_row)(const struct MATRIX_TYPE_NAME *target, 
  * @param target_col The col we want to extract
  * @return A new Matrix containing the contents of the target column. Must be cleaned up after
  */
-MATRIX_TYPE_NAME *MATRIX_METHOD(get_col)(const struct MATRIX_TYPE_NAME *target, size_t target_col) {
+MATRIX_TYPE_NAME *MATRIX_METHOD(get_col)(const MATRIX_TYPE_NAME *target, size_t target_col) {
 
     // Ensure that the target col exists inside of a valid Matrix
     if (!MATRIX_METHOD(exists)(target, 0, target_col)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix / col provided to get_col\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(target->num_rows, 1);
@@ -233,7 +233,7 @@ void MATRIX_METHOD(print)(const MATRIX_TYPE_NAME *target) {
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to print\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -261,7 +261,7 @@ MATRIX_TYPE MATRIX_METHOD(max)(const MATRIX_TYPE_NAME *target) {
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to max\n"); }
-        return (MATRIX_TYPE)0;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE current_max = target->get(target, 0, 0);
@@ -288,7 +288,7 @@ MATRIX_TYPE MATRIX_METHOD(min)(const MATRIX_TYPE_NAME *target) {
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to max\n"); }
-        return (MATRIX_TYPE)0;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE current_min = target->get(target, 0, 0);
@@ -317,7 +317,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(flatten)(const MATRIX_TYPE_NAME *target, Vector_
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to flatten\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = NULL;
@@ -334,7 +334,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(flatten)(const MATRIX_TYPE_NAME *target, Vector_
     if (result == NULL) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for flattened Matrix\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     size_t index = 0;
@@ -371,7 +371,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(transpose)(const MATRIX_TYPE_NAME *target) {
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to transpose\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(target->num_cols, target->num_rows);
@@ -379,7 +379,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(transpose)(const MATRIX_TYPE_NAME *target) {
     if (result == NULL) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the transpose operation\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -405,13 +405,13 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(add)(const MATRIX_TYPE_NAME *self, const MATRIX_
     if (self == NULL || target == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot add\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot add\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(self->num_rows, self->num_cols);
@@ -419,7 +419,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(add)(const MATRIX_TYPE_NAME *self, const MATRIX_
     if (result == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for addition Matrix result\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < self->num_rows; ++i) {
@@ -443,13 +443,13 @@ void MATRIX_METHOD(add_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_NAME *
     if (self == NULL || target == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot add_o\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot add_o\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < self->num_rows; ++i) {
@@ -472,13 +472,13 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(subtract)(const MATRIX_TYPE_NAME *self, const MA
     if (self == NULL || target == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot subtract\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot subtract\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(self->num_rows, self->num_cols);
@@ -486,7 +486,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(subtract)(const MATRIX_TYPE_NAME *self, const MA
     if (result == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for subtraxtion Matrix result\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < self->num_rows; ++i) {
@@ -510,13 +510,13 @@ void MATRIX_METHOD(subtract_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_N
     if (self == NULL || target == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot subtract_o\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot subtract_o\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < self->num_rows; ++i) {
@@ -539,7 +539,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(scale)(const MATRIX_TYPE_NAME *target, MATRIX_TY
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to scale\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(target->num_rows, target->num_cols);
@@ -547,7 +547,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(scale)(const MATRIX_TYPE_NAME *target, MATRIX_TY
     if (result == NULL) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the scale operation\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -571,7 +571,7 @@ void MATRIX_METHOD(scale_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE scalar) 
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to scale_o\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -596,7 +596,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(add_scalar)(const MATRIX_TYPE_NAME *target, MATR
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to add_scalar\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(target->num_rows, target->num_cols);
@@ -604,7 +604,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(add_scalar)(const MATRIX_TYPE_NAME *target, MATR
     if (result == NULL) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the add scalar operation\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -628,7 +628,7 @@ void MATRIX_METHOD(add_scalar_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE sca
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to add_scalar_o\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -653,7 +653,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(apply)(const MATRIX_TYPE_NAME *target, MATRIX_TY
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to apply\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(target->num_rows, target->num_cols);
@@ -661,7 +661,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(apply)(const MATRIX_TYPE_NAME *target, MATRIX_TY
     if (result == NULL) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the apply operation\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -685,7 +685,7 @@ void MATRIX_METHOD(apply_o)(const MATRIX_TYPE_NAME *target, MATRIX_TYPE (*func)(
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to apply_o\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -710,16 +710,16 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(apply_second)(const MATRIX_TYPE_NAME *target, MA
 
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to apply\n"); }
-        return NULL;
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to apply_second\n"); }
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(target->num_rows, target->num_cols);
 
     if (result == NULL) {
 
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the apply operation\n"); }
-        return NULL;
+        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the apply_second operation\n"); }
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -744,7 +744,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(multiply)(const MATRIX_TYPE_NAME *self, const MA
     if (self == NULL || target == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot multiply\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
@@ -752,7 +752,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(multiply)(const MATRIX_TYPE_NAME *self, const MA
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot multiply. [%zu x %zu] != [%zu x %zu]\n",
             self->num_rows, self->num_cols, target->num_rows, target->num_cols); }
         
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(self->num_rows, self->num_cols);
@@ -760,7 +760,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(multiply)(const MATRIX_TYPE_NAME *self, const MA
     if (result == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for multiplication Matrix result\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < self->num_rows; ++i) {
@@ -784,7 +784,7 @@ void MATRIX_METHOD(multiply_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_N
     if (self == NULL || target == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Self or target Matrix is NULL. Cannot multiply_o\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     if (self->num_cols != target->num_cols || self->num_rows != target->num_rows) {
@@ -792,7 +792,7 @@ void MATRIX_METHOD(multiply_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_N
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Matrix dimension mismatch. Cannot multiply_o. [%zu x %zu] != [%zu x %zu]\n",
             self->num_rows, self->num_cols, target->num_rows, target->num_cols); }
         
-        return;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < self->num_rows; ++i) {
@@ -816,7 +816,7 @@ void MATRIX_METHOD(populate)(MATRIX_TYPE_NAME *target, MATRIX_TYPE value) {
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to populate\n"); }
-        return;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -838,7 +838,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(copy)(const MATRIX_TYPE_NAME *target) {
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to copy\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(allocate)(target->num_rows, target->num_cols);
@@ -846,7 +846,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(copy)(const MATRIX_TYPE_NAME *target) {
     if (result == NULL) { 
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for copying Matrix\n"); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
@@ -870,7 +870,7 @@ MATRIX_TYPE MATRIX_METHOD(sum)(const MATRIX_TYPE_NAME *target) {
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to sum\n"); }
-        return (MATRIX_TYPE)0;
+        exit(EXIT_FAILURE);
     }
 
     MATRIX_TYPE running_sum = 0;
@@ -898,7 +898,7 @@ size_t MATRIX_METHOD(max_idx)(const MATRIX_TYPE_NAME *target, Vector_Orientation
     if (!MATRIX_METHOD(exists)(target, 0, 0)) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Invalid Matrix provided to max_idx\n"); }
-        return (MATRIX_TYPE)0;
+        exit(EXIT_FAILURE);
     }
 
     size_t max_index = 0;
@@ -955,7 +955,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(allocate)(size_t desired_rows, size_t desired_co
     if (target == NULL) {
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate Matrix of size %zu x %zu\n", desired_rows, desired_cols); }
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Allocate the proper number of rows -- i.e. an array of arrays
@@ -965,7 +965,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(allocate)(size_t desired_rows, size_t desired_co
 
         if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to data array in Matrix of size %zu x %zu\n", desired_rows, desired_cols); }
         
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     // Iterate over the rows and start allocating the proper columns
@@ -976,7 +976,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(allocate)(size_t desired_rows, size_t desired_co
         if (target->data[i] == NULL) {
 
             if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate row in Matrix of size %zu x %zu\n", desired_rows, desired_cols); }
-            return NULL;
+            exit(EXIT_FAILURE);
         }
     }
 

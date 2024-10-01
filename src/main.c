@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-25
+ * @version: 2024-09-30
  *
  * General Notes:
  *
@@ -18,7 +18,7 @@
 #include "include/main.h"
 
 void train_new_model(const char* labels_path, const char* images_path, size_t num_layers, const size_t* nn_config,
-    float learning_rate, bool generate_biases, const char* model_path, size_t num_training_images) {
+    float learning_rate, bool generate_biases, size_t num_training_images, size_t epochs, const char* model_path) {
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
@@ -35,7 +35,7 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
         images->clear(images);
         labels->clear(labels);
 
-        return;
+        exit(EXIT_FAILURE);
     }
 
     if (labels->num_labels != images->num_images) {
@@ -44,7 +44,7 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
         images->clear(images);
         labels->clear(labels);
 
-        return;
+        exit(EXIT_FAILURE);
     }
 
     // Initalize the Neural Network
@@ -57,19 +57,33 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
     // Define where to start in the training dataset and how many samples to train on
     size_t training_start_idx = 0;
 
-    log_message("Starting model training");
+    // Use a buffer for snprintf
+    char buffer[100];
+    memset(buffer, '\0', 100);
 
-    // Set i to the range of images + labels we want to train on
-    for (size_t i = training_start_idx; i < training_start_idx + num_training_images; ++i) {
+    log_message("Starting model online training");
 
-        current_image = images->get(images, i);
-        current_label = labels->get(labels, i);
+    // Execute the training over the number of epochs
+    for (size_t i = 0; i < epochs; ++i) {
 
-        // Execute the training on the current image + label
-        nn->train(nn, current_image, current_label);
+        if (SHOW_EPOCH) {
+
+            snprintf(buffer, 100, "INFO: Starting online training epoch %zu", i);
+            log_message(buffer);
+        }
+
+        // Set i to the range of images + labels we want to train on
+        for (size_t j = training_start_idx; j < training_start_idx + num_training_images; ++j) {
+
+            current_image = images->get(images, j);
+            current_label = labels->get(labels, j);
+
+            // Execute the training on the current image + label
+            nn->train(nn, current_image, current_label);
+        }
     }
 
-    log_message("Finished model training");
+    log_message("Finished model online training");
 
     log_message("Saving model");
     nn->save(nn, true, model_path);
@@ -83,7 +97,7 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
 }
 
 void train_new_model_batched(const char* labels_path, const char* images_path, size_t num_layers, const size_t* nn_config,
-    float learning_rate, bool generate_biases, const char* model_path, size_t num_training_images, size_t batch_size, size_t epochs) {
+    float learning_rate, bool generate_biases, size_t num_training_images, size_t batch_size, size_t epochs, const char* model_path) {
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
@@ -100,7 +114,7 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
         images->clear(images);
         labels->clear(labels);
 
-        return;
+        exit(EXIT_FAILURE);
     }
 
     if (labels->num_labels != images->num_images) {
@@ -109,20 +123,30 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
         images->clear(images);
         labels->clear(labels);
 
-        return;
+        exit(EXIT_FAILURE);
     }
 
     // Initalize the Neural Network
     Neural_Network* nn = init_Neural_Network(num_layers, nn_config, learning_rate, generate_biases);
 
-    log_message("Starting model training");
+    // Use a buffer for snprintf
+    char buffer[100];
+    memset(buffer, '\0', 100);
+
+    log_message("Starting batch model training");
 
     for (size_t i = 0; i < epochs; ++i) {
+
+        if (SHOW_EPOCH) {
+
+            snprintf(buffer, 100, "INFO: Starting batch training epoch %zu", i);
+            log_message(buffer);
+        }
 
         nn->batch_train(nn, images, labels, num_training_images, batch_size);
     }
 
-    log_message("Finished model training");
+    log_message("Finished batch model training");
 
     log_message("Saving model");
     nn->save(nn, true, model_path);
@@ -152,7 +176,7 @@ void inference(const char* labels_path, const char* images_path, const char* mod
         images->clear(images);
         labels->clear(labels);
 
-        return;
+        exit(EXIT_FAILURE);
     }
 
     if (labels->num_labels != images->num_images) {
@@ -161,7 +185,7 @@ void inference(const char* labels_path, const char* images_path, const char* mod
         images->clear(images);
         labels->clear(labels);
 
-        return;
+        exit(EXIT_FAILURE);
     }
 
     log_message("Starting to load model from file");
@@ -226,7 +250,7 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
         images->clear(images);
         labels->clear(labels);
 
-        return;
+        exit(EXIT_FAILURE);
     }
 
     if (labels->num_labels != images->num_images) {
@@ -235,7 +259,7 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
         images->clear(images);
         labels->clear(labels);
 
-        return;
+        exit(EXIT_FAILURE);
     }
 
     log_message("Starting to load model from file");
@@ -320,7 +344,7 @@ int main(int argc, char* argv[]) {
     if (argc <= 1) {
 
         fprintf(stderr, "Too few arguments provided. Use main help to get a help menu. Exiting\n");
-        exit(-1);
+        return 1;
     }
 
     // Ensure this is only executed once
@@ -330,13 +354,13 @@ int main(int argc, char* argv[]) {
 
         /*
          * For training, expect: labels_path (2), images_path (3), learning_rate (4), include_biases (5), 
-         * num_layers (6), [layer_info] (7..n-3), num_images (n-2), model_name (n-1)
+         * num_layers (6), [layer_info] (7..n-4), num_images (n-3), epochs (n-2), model_name (n-1)
          */
 
-        if (argc <= 9) {
+        if (argc <= (9 + atoi(argv[6]))) {
 
             fprintf(stderr, "ERR: Too few arguments provided to train\n");
-            return -1;
+            return 1;
         }
 
         float learning_rate = 0;
@@ -356,7 +380,8 @@ int main(int argc, char* argv[]) {
         }
 
         // Train a new model with the given parameters
-        train_new_model(argv[2], argv[3], num_layers, nn_config, learning_rate, generate_biases, argv[argc - 1], (size_t)atoi(argv[argc - 2]));
+        train_new_model(argv[2], argv[3], num_layers, nn_config, learning_rate, generate_biases, (size_t)atoi(argv[argc - 3]),
+            (size_t)atoi(argv[argc - 2]), argv[argc - 1]);
 
         free(nn_config);
         return 0;
@@ -368,10 +393,10 @@ int main(int argc, char* argv[]) {
          * num_layers (6), [layer_info] (7..n-5), num_images (n-4), batch_size (n-3), epochs (n-2), model_name (n - 1)
          */
 
-        if (argc <= 10) {
+        if (argc <= (10 + atoi(argv[6]))) {
 
-            fprintf(stderr, "ERR: Too few arguments provided to train\n");
-            return -1;
+            fprintf(stderr, "ERR: Too few arguments provided to batch-train\n");
+            return 1;
         }
 
         float learning_rate = 0;
@@ -391,8 +416,8 @@ int main(int argc, char* argv[]) {
         }
 
         // Train a new model with the given parameters
-        train_new_model_batched(argv[2], argv[3], num_layers, nn_config, learning_rate, generate_biases, argv[argc - 1],
-            (size_t)atoi(argv[argc - 4]), (size_t)atoi(argv[argc - 3]), (size_t)atoi(argv[argc-2]));
+        train_new_model_batched(argv[2], argv[3], num_layers, nn_config, learning_rate, generate_biases,
+            (size_t)atoi(argv[argc - 4]), (size_t)atoi(argv[argc - 3]), (size_t)atoi(argv[argc-2]), argv[argc - 1]);
 
         free(nn_config);
         return 0;
@@ -402,7 +427,7 @@ int main(int argc, char* argv[]) {
         if (argc < 6) {
 
             fprintf(stderr, "ERR: Too few arguments provided to predict\n");
-            return -1;
+            return 1;
         }
 
         // Execute inference and exit
@@ -414,7 +439,7 @@ int main(int argc, char* argv[]) {
         if (argc < 6) {
 
             fprintf(stderr, "ERR: Too few arguments provided to use threaded-predict\n");
-            return -1;
+            return 1;
         }
 
         // Execute inference and exit
@@ -423,9 +448,9 @@ int main(int argc, char* argv[]) {
     }
     else if (strncmp(argv[1], "help", 4) == 0) {
 
-        printf("Expected usage: main train labels_path images_path learning_rate include_biases num_layers [layer_info] num_training_images model_name\n");
-        printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 model.model\n\n");
-        printf("This example has a learning rate of 0.1, uses biases, has 3 layers, and uses 1000 images to train on\n");
+        printf("Expected usage: main train labels_path images_path learning_rate include_biases num_layers [layer_info] num_training_images epochs model_name\n");
+        printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 3 model.model\n\n");
+        printf("This example has a learning rate of 0.1, uses biases, has 3 layers, and uses 1000 images to train on, over 3 epochs\n");
 
         printf("Expected usage: main batch-train labels_path images_path learning_rate include_biases num_layers [layer_info] num_training_images batch_size epochs model_name\n");
         printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 10 10 model.model\n\n");
@@ -443,5 +468,5 @@ int main(int argc, char* argv[]) {
     }
 
     fprintf(stderr, "ERR: Invalid argument passed to main. Exiting\n");
-    return -1;
+    return 1;
 }
