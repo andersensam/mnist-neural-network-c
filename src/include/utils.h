@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-17
+ * @version: 2024-10-04
  *
  * General Notes:
  *
@@ -28,13 +28,6 @@
 /* Local dependencies */
 
 /* Definitions */
-
-/**
- * Calculate the sigmoid of a given float
- * @param z The float value we want to calculate the sigmoid of
- * @returns Returns a float, containing the sigmoid
- */
-float sigmoid(float z);
 
 /**
  * Convert from the big endian format in the dataset if we're on a little endian machine

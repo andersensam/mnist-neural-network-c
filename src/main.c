@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-30
+ * @version: 2024-10-04
  *
  * General Notes:
  *
@@ -452,16 +452,16 @@ int main(int argc, char* argv[]) {
         printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 3 model.model\n\n");
         printf("This example has a learning rate of 0.1, uses biases, has 3 layers, and uses 1000 images to train on, over 3 epochs\n");
 
-        printf("Expected usage: main batch-train labels_path images_path learning_rate include_biases num_layers [layer_info] num_training_images batch_size epochs model_name\n");
+        printf("\n\nExpected usage: main batch-train labels_path images_path learning_rate include_biases num_layers [layer_info] num_training_images batch_size epochs model_name\n");
         printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 10 10 model.model\n\n");
         printf("This example has a learning rate of 0.1, uses biases, has 3 layers,uses 1000 images to train on, with a batch size of 10, and 10 epochs\n");
 
-        printf("Expected usage: main predict labels_path images_path num_predict model_path\n");
-        printf("Example for predict: main predict data/labels data/images 100 model.model\n");
+        printf("\n\nExpected usage: main predict labels_path images_path num_predict model_path\n");
+        printf("Example for predict: main predict data/labels data/images 100 model.model\n\n");
         printf("This example predicts 100 images");
 
-        printf("Expected usage: main threaded-predict labels_path images_path num_predict model_path\n");
-        printf("Example for predict: main threaded-predict data/labels data/images 100 model.model\n");
+        printf("\n\nExpected usage: main threaded-predict labels_path images_path num_predict model_path\n");
+        printf("Example for predict: main threaded-predict data/labels data/images 100 model.model\n\n");
         printf("This example predicts 100 images");
 
         return 0;

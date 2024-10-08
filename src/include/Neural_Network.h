@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-25
+ * @version: 2024-10-07
  *
  * General Notes:
  *
@@ -19,6 +19,11 @@
 #define NEURAL_NETWORK_H
 
 #define NEURAL_NETWORK_DEBUG 1
+
+/* Cost Function and Derivative Definition */
+#define NEURAL_NETWORK_ACTIVATION Neural_Network_sigmoid
+#define NEURAL_NETWORK_COST_DERIVATIVE Neural_Network_sigmoid_prime
+#define NEURAL_NETWORK_OUTPUT_DELTA Neural_Network_sigmoid_delta
 
 /* Markers to help with loading / saving Neural Networks */
 #define NN_HEADER_MAGIC 0x0000AA00
@@ -207,6 +212,28 @@ typedef struct Neural_Network {
     struct Neural_Network* (*copy)(const struct Neural_Network* self);
 
     /**
+     * The cost function to apply. This is a placeholder, using the function defined in the header above
+     * This should be used with Matrix->apply
+     * @param z Float to apply the cost function to
+     * @returns Returns a float of the cost function.
+     */
+    float (*activation)(float z);
+
+    /**
+     * The derivative of the cost function to apply
+     * @param target A floatMatrix to apply calculate the derivative of
+     */
+    floatMatrix* (*cost_derivative)(const floatMatrix* target);
+
+    /**
+     * Delta placeholder function
+     * @param actual Actual value(s)
+     * @param output Output(s) from the final layer
+     * @returns Returns a floatMatrix with the delta (however that is calculate for your activation)
+     */
+    floatMatrix* (*delta)(const floatMatrix* actual, const floatMatrix* output);
+
+    /**
      * Cleans up a Neural Network instance
      * @param target The Neural Network to clean up
      */
@@ -245,11 +272,26 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
 void* Neural_Network_threaded_predict(void* thread_void);
 
 /**
+ * Calculate the sigmoid of a given float
+ * @param z The float value we want to calculate the sigmoid of
+ * @returns Returns a float, containing the sigmoid
+ */
+float Neural_Network_sigmoid(float z);
+
+/**
  * Calculate the sigmoid prime of a Matrix
  * @param target The Matrix to calculate the sigmoid prime of -- this should already have sigmoid applied to it
  * @returns Returns a new Matrix of sigmoid prime values
  */
 floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target);
+
+/**
+ * Calculate the error / delta for sigmoid output layers
+ * @param actual Actual value(s)
+ * @param output The output(s) from the NN
+ * @returns Returns a floatMatrix containing `actual - output`
+ */
+floatMatrix* Neural_Network_sigmoid_delta(const floatMatrix* actual, const floatMatrix* output);
 
 /**
  * Calculate the softmax of a Matrix

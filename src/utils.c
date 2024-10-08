@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-30
+ * @version: 2024-10-04
  *
  * General Notes:
  *
@@ -16,11 +16,6 @@
  */
 
 #include "include/utils.h"
-
-float sigmoid(float z) {
-
-    return 1.0f / (1 + exp(-1 * z));
-}
 
 uint32_t map_uint32(uint32_t in) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
