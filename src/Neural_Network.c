@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-30
+ * @version: 2024-10-07
  *
  * General Notes:
  *
@@ -36,6 +36,8 @@ void Neural_Network_Layer_clear(Neural_Network_Layer* target) {
     if (target->errors != NULL) { target->errors->clear(target->errors); }
 
     if (target->new_weights != NULL) { target->new_weights->clear(target->new_weights); }
+
+    if (target->z != NULL) { target->z->clear(target->z); }
 
     free(target);
 }
@@ -75,6 +77,7 @@ Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previ
         target->outputs = NULL;
         target->errors = NULL;
         target->new_weights = NULL;
+        target->z = NULL;
 
         target->clear = Neural_Network_Layer_clear;
         target->copy = Neural_Network_Layer_copy;
@@ -120,6 +123,7 @@ Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previ
     target->outputs = NULL;
     target->errors = NULL;
     target->new_weights = NULL;
+    target->z = NULL;
 
     target->clear = Neural_Network_Layer_clear;
     target->copy = Neural_Network_Layer_copy;
@@ -180,6 +184,8 @@ Neural_Network_Layer* Neural_Network_Layer_copy(const Neural_Network_Layer* self
 
     if (self->new_weights != NULL) { target->new_weights = self->new_weights->copy(self->new_weights); }
 
+    if (self->z != NULL) { target->z = self->z->copy(self->z); }
+
     return target;
 }
 
@@ -227,7 +233,7 @@ floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatri
         layer_input->add_o(layer_input, self->layers[i]->biases);
 
         // Apply the sigmoid actication function and store as the layer's output
-        layer_input->apply_o(layer_input, sigmoid);
+        layer_input->apply_o(layer_input, self->activation);
 
         outputs[i] = layer_input;
         layer_input = NULL;
@@ -275,6 +281,11 @@ void* Neural_Network_threaded_predict(void* thread_void) {
     return NULL;
 }
 
+float Neural_Network_sigmoid(float z) {
+
+    return 1.0f / (1 + exp(-1 * z));
+}
+
 floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target) {
 
     if (target == NULL) {
@@ -295,6 +306,17 @@ floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target) {
     one->multiply_o(one, target);
 
     return one;
+}
+
+floatMatrix* Neural_Network_sigmoid_delta(const floatMatrix* actual, const floatMatrix* output) {
+
+    if (actual == NULL || output == NULL) {
+
+        if (NEURAL_NETWORK_DEBUG) { fprintf(stderr, "ERR: Invalid floatMatrix(s) provided to sigmoid_delta\n"); }
+        exit(EXIT_FAILURE);
+    }
+
+    return actual->subtract(actual, output);
 }
 
 floatMatrix* Neural_Network_softmax(const floatMatrix* target) {
@@ -413,8 +435,11 @@ void Neural_Network_training_predict(Neural_Network* self, const floatMatrix* fl
         // Apply the bias before proceeding
         hidden_inputs->add_o(hidden_inputs, self->layers[i]->biases);
 
+        // Copy the pre-activation values to the Z vector
+        self->layers[i]->z = hidden_inputs->copy(hidden_inputs);
+
         // The output of this layer is the input with the sigmoid applied
-        hidden_inputs->apply_o(hidden_inputs, sigmoid);
+        hidden_inputs->apply_o(hidden_inputs, self->activation);
 
         // Copy the sigmoid outputs and store it in the layer for use later
         self->layers[i]->outputs = hidden_inputs;
@@ -443,7 +468,7 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
     floatMatrix* output = Neural_Network_create_label(label);
 
     floatMatrix* transpose = NULL;
-    floatMatrix* sigmoid_prime = NULL;
+    floatMatrix* derivative = NULL;
     floatMatrix* multiplied = NULL;
 
     for (size_t i = self->num_layers - 1; i >= 1; --i) {
@@ -452,7 +477,7 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
         if (i == self->num_layers - 1) {
 
             // Calculate the error between the proper label and the predicted output
-            self->layers[i]->errors = output->subtract(output, self->layers[self->num_layers - 1]->outputs);
+            self->layers[i]->errors = self->delta(output, self->layers[self->num_layers - 1]->outputs);
         }
         else {
 
@@ -464,10 +489,10 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
         }
 
         // Get the sigmoid prime of the outputs
-        sigmoid_prime = Neural_Network_sigmoid_prime(self->layers[i]->outputs);
+        derivative = self->cost_derivative(self->layers[i]->outputs);
 
         // Multiply the errors by the sigmoid prime
-        multiplied = self->layers[i]->errors->multiply(self->layers[i]->errors, sigmoid_prime);
+        multiplied = self->layers[i]->errors->multiply(self->layers[i]->errors, derivative);
 
         // Transpose the previous layer's output
         transpose = self->layers[i - 1]->outputs->transpose(self->layers[i - 1]->outputs);
@@ -482,7 +507,7 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
         self->layers[i]->new_weights->add_o(self->layers[i]->new_weights, self->layers[i]->weights);
 
         // Clean up
-        sigmoid_prime->clear(sigmoid_prime);
+        derivative->clear(derivative);
         transpose->clear(transpose);
         multiplied->clear(multiplied);
     }
@@ -503,6 +528,10 @@ void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_
 
         self->layers[i]->errors->clear(self->layers[i]->errors);
         self->layers[i]->errors = NULL;
+
+        // Clean up the Z vector
+        self->layers[i]->z->clear(self->layers[i]->z);
+        self->layers[i]->z = NULL;
     }
 
     output->clear(output);
@@ -528,7 +557,7 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
     floatMatrix* converted_image = NULL;
     floatMatrix* flat_image = NULL;
     floatMatrix* expanded_bias = NULL;
-    floatMatrix* sigmoid_prime = NULL;
+    floatMatrix* derivative = NULL;
     floatMatrix* transpose = NULL;
     floatMatrix* outputs = NULL;
     floatMatrix* ones = NULL;
@@ -645,7 +674,7 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
             if (j == self->num_layers - 1) {
 
                 // Calculate the error between the proper labels and the predicted outputs
-                self->layers[j]->errors = outputs->subtract(outputs, self->layers[self->num_layers - 1]->outputs);
+                self->layers[j]->errors = self->delta(outputs, self->layers[self->num_layers - 1]->outputs);
 
             }
             else {
@@ -658,21 +687,21 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
             }
 
             // Sigmoid prime of the outputs
-            sigmoid_prime = Neural_Network_sigmoid_prime(self->layers[j]->outputs);
+            derivative = self->cost_derivative(self->layers[j]->outputs);
 
             // Multiply the errors with the sigmoid prime
-            sigmoid_prime->multiply_o(sigmoid_prime, self->layers[j]->errors);
+            derivative->multiply_o(derivative, self->layers[j]->errors);
 
             // Transpose the outputs from the last layer
             transpose = self->layers[j - 1]->outputs->transpose(self->layers[j - 1]->outputs);
 
             // Get the dot product of the transposed outputs and the errors * sigmoid
-            nabla_w[j] = sigmoid_prime->dot(sigmoid_prime, transpose);
+            nabla_w[j] = derivative->dot(derivative, transpose);
 
             // Get the sum of the errors for processing later
             nabla_b[j] = self->layers[j]->errors->dot(self->layers[j]->errors, ones);
 
-            sigmoid_prime->clear(sigmoid_prime);
+            derivative->clear(derivative);
             transpose->clear(transpose);
         }
 
@@ -720,6 +749,10 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
 
             nabla_b[j]->clear(nabla_b[j]);
             nabla_b[j] = NULL;
+
+            // Clean up the Z vector
+            self->layers[j]->z->clear(self->layers[j]->z);
+            self->layers[j]->z = NULL;
         }
 
         // Clean up the first layer's 'output', i.e. the image Matrix
@@ -963,6 +996,11 @@ Neural_Network* import_Neural_Network(const char* filename) {
     target->copy = Neural_Network_copy;
     target->clear = Neural_Network_clear;
 
+    // Set the cost and derivative functions
+    target->activation = NEURAL_NETWORK_ACTIVATION;
+    target->cost_derivative = NEURAL_NETWORK_COST_DERIVATIVE;
+    target->delta = NEURAL_NETWORK_OUTPUT_DELTA;
+
     // Setup the array of pointers for each layer
     target->layers = calloc(num_layers, sizeof(Neural_Network_Layer*));
 
@@ -1164,6 +1202,11 @@ Neural_Network* init_Neural_Network(size_t num_layers, const size_t* layer_info,
     target->copy = Neural_Network_copy;
     target->clear = Neural_Network_clear;
 
+    // Set the cost and derivative functions
+    target->activation = NEURAL_NETWORK_ACTIVATION;
+    target->cost_derivative = NEURAL_NETWORK_COST_DERIVATIVE;
+    target->delta = NEURAL_NETWORK_OUTPUT_DELTA;
+
     return target;
 }
 
@@ -1208,6 +1251,11 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self) {
     target->save = Neural_Network_save;
     target->copy = Neural_Network_copy;
     target->clear = Neural_Network_clear;
+
+    // Set the cost and derivative functions
+    target->activation = NEURAL_NETWORK_ACTIVATION;
+    target->cost_derivative = NEURAL_NETWORK_COST_DERIVATIVE;
+    target->delta = NEURAL_NETWORK_OUTPUT_DELTA;
 
     return target;
 }
