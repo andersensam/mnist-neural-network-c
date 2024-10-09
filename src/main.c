@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-04
+ * @version: 2024-10-08
  *
  * General Notes:
  *
@@ -22,11 +22,11 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = init_MNIST_labels(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = init_MNIST_images(images_path);
+    MNIST_Images* images = MNIST_Images_init(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_training_images > images->num_images) {
@@ -48,10 +48,10 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
     }
 
     // Initalize the Neural Network
-    Neural_Network* nn = init_Neural_Network(num_layers, nn_config, learning_rate, generate_biases);
+    Neural_Network* nn = Neural_Network_init(num_layers, nn_config, learning_rate, generate_biases);
 
     // Setup some variables that we'll use again and again in the loop
-    pixelMatrix* current_image = NULL;
+    PixelMatrix* current_image = NULL;
     uint8_t current_label = 0;
 
     // Define where to start in the training dataset and how many samples to train on
@@ -101,11 +101,11 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = init_MNIST_labels(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = init_MNIST_images(images_path);
+    MNIST_Images* images = MNIST_Images_init(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_training_images > images->num_images) {
@@ -127,7 +127,7 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
     }
 
     // Initalize the Neural Network
-    Neural_Network* nn = init_Neural_Network(num_layers, nn_config, learning_rate, generate_biases);
+    Neural_Network* nn = Neural_Network_init(num_layers, nn_config, learning_rate, generate_biases);
 
     // Use a buffer for snprintf
     char buffer[100];
@@ -163,11 +163,11 @@ void inference(const char* labels_path, const char* images_path, const char* mod
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = init_MNIST_labels(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = init_MNIST_images(images_path);
+    MNIST_Images* images = MNIST_Images_init(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_predict > images->num_images) {
@@ -193,9 +193,9 @@ void inference(const char* labels_path, const char* images_path, const char* mod
     log_message("Finished loading model from file");
 
     // Setup some variables that we'll use again and again in the loop
-    pixelMatrix* current_image = NULL;
+    PixelMatrix* current_image = NULL;
     uint8_t current_label = 0;
-    floatMatrix* current_prediction = NULL;
+    FloatMatrix* current_prediction = NULL;
     size_t current_guess = 0;
     size_t number_correct = 0;
     size_t start_index = 0;
@@ -237,11 +237,11 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = init_MNIST_labels(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = init_MNIST_images(images_path);
+    MNIST_Images* images = MNIST_Images_init(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_predict > images->num_images) {

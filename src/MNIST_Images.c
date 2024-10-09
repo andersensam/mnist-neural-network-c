@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-30
+ * @version: 2024-10-08
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -18,15 +18,15 @@
 #include "include/MNIST_Images.h"
 
 // Include the type of Matrix that we want to use
-#define MATRIX_TYPE_NAME pixelMatrix
+#define MATRIX_TYPE_NAME PixelMatrix
 #define MATRIX_TYPE float
 #define MATRIX_STRING "%1.3f"
 #include "Matrix.c"
 
-MNIST_Images* init_MNIST_images(const char* path) {
+MNIST_Images* MNIST_Images_init(const char* path) {
 
     // Open the path to where the images are stored, in read-only mode
-    FILE* images_file = fopen(path, "ro");
+    FILE* images_file = fopen(path, "rb");
 
     if (images_file == NULL) {
 
@@ -66,7 +66,7 @@ MNIST_Images* init_MNIST_images(const char* path) {
     }
 
     // Allocate the memory to store the images
-    MNIST_Images* target = malloc(sizeof(MNIST_Images));
+    MNIST_Images* target = calloc(1, sizeof(MNIST_Images));
 
     if (target == NULL) {
 
@@ -80,25 +80,17 @@ MNIST_Images* init_MNIST_images(const char* path) {
     target->num_images = map_uint32(image_buffer[1]);
 
     // Allocate the memory for storing the labels themselves
-    target->images = calloc(target->num_images, sizeof(pixelMatrix*));
+    target->images = calloc(target->num_images, sizeof(PixelMatrix*));
 
     uint8_t pixel_value = 0;
 
     // Iterate over the expected number of images
     for (uint32_t i = 0; i < target->num_images; ++i) {
 
-        // For each expected image, create a pixelMatrix to store it in
-        target->images[i] = pixelMatrix_allocate(MNIST_IMAGE_HEIGHT, MNIST_IMAGE_WIDTH);
+        // For each expected image, create a PixelMatrix to store it in
+        target->images[i] = PixelMatrix_init(MNIST_IMAGE_HEIGHT, MNIST_IMAGE_WIDTH);
 
-        if (target->images[i] == NULL) {
-
-            if (MNIST_IMAGES_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for image number %u\n", i); }
-
-            fclose(images_file);
-            exit(EXIT_FAILURE);
-        }
-
-        // For each expected pixel, grab the value and store it in the pixelMatrix
+        // For each expected pixel, grab the value and store it in the PixelMatrix
         for (size_t j = 0; j < MNIST_IMAGE_HEIGHT; ++j) {
 
             for (size_t k = 0; k < MNIST_IMAGE_WIDTH; ++k) {
@@ -111,7 +103,7 @@ MNIST_Images* init_MNIST_images(const char* path) {
                     exit(EXIT_FAILURE);
                 }
 
-                // Copy the value of the pixel intensity to the newly created pixelMatrix
+                // Copy the value of the pixel intensity to the newly created PixelMatrix
                 target->images[i]->set(target->images[i], j, k, MNIST_Images_pixel_to_float(&pixel_value));
             }
         }
@@ -125,7 +117,7 @@ MNIST_Images* init_MNIST_images(const char* path) {
     return target;
 }
 
-pixelMatrix* MNIST_Images_get(const MNIST_Images* target, uint32_t index) {
+PixelMatrix* MNIST_Images_get(const MNIST_Images* target, uint32_t index) {
     
     if (target == NULL) {
 

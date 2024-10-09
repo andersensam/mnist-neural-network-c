@@ -204,7 +204,7 @@ The Matrix library. See note above to check out the upstream repo.
 
 ### *MNIST_Images.c*
 
-A data type created to store the MNIST images in `float` format, wrapping inside a `floatMatrix`. It also handles importing the dataset.
+A data type created to store the MNIST images in `float` format, wrapping inside a `FloatMatrix`. It also handles importing the dataset.
 
 ### *MNIST_Labels.c*
 
