@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-30
+ * @version: 2024-10-08
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -59,7 +59,7 @@ typedef struct MNIST_Labels {
  * @param path Path to the file we're reading the labels from
  * @return Returns an instance of MNIST_Labels containing the labels
  */
-MNIST_Labels* init_MNIST_labels(const char* path);
+MNIST_Labels* MNIST_Labels_init(const char* path);
 
 /**
  * Get a label from the label dataset

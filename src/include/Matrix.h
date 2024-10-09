@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Matrix Library in C
  * @author : Samuel Andersen
- * @version: 2024-09-30
+ * @version: 2024-10-08
  *
  */
 
@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 /* Definitions */
 typedef enum {
@@ -48,7 +49,7 @@ typedef struct MATRIX_TYPE_NAME {
     size_t num_cols;
 
     /* Actual data storage */
-    MATRIX_TYPE **data;
+    MATRIX_TYPE *data;
 
     /* Methods relating to the Matrix */
     
@@ -262,6 +263,13 @@ typedef struct MATRIX_TYPE_NAME {
      */
     size_t (*max_idx)(const struct MATRIX_TYPE_NAME *target, Vector_Orientation orientation, size_t index);
 
+    /**
+     * Create a copy of the underlying data and return the pointer to it
+     * @param target The Matrix we want to expose
+     * @returns Returns a pointer to the data
+     */
+    MATRIX_TYPE* (*expose)(const struct MATRIX_TYPE_NAME *target);
+
 } __attribute__((__packed__)) MATRIX_TYPE_NAME;
 
 /**
@@ -460,7 +468,7 @@ void MATRIX_METHOD(multiply_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_N
  * @param desired_cols Number of colums to allocate per row
  * @returns Returns a Matrix with all data elements allocated
  */
-MATRIX_TYPE_NAME *MATRIX_METHOD(allocate)(size_t desired_rows, size_t desired_cols);
+MATRIX_TYPE_NAME *MATRIX_METHOD(init)(size_t desired_rows, size_t desired_cols);
 
 /**
  * Populate a Matrix with a specific value
@@ -491,6 +499,13 @@ MATRIX_TYPE MATRIX_METHOD(sum)(const MATRIX_TYPE_NAME *target);
  * @return Returns a size_t of the index containing the max
  */
 size_t MATRIX_METHOD(max_idx)(const MATRIX_TYPE_NAME *target, Vector_Orientation orientation, size_t index);
+
+/**
+ * Create a copy of the underlying data and return the pointer to it
+* @param target The Matrix we want to expose
+* @returns Returns a pointer to the data
+*/
+MATRIX_TYPE* MATRIX_METHOD(expose)(const MATRIX_TYPE_NAME *target);
 
 #undef MATRIX_TYPE_NAME
 #undef MATRIX_TYPE

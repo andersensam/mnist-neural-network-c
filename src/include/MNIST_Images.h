@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-30
+ * @version: 2024-10-08
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -34,7 +34,7 @@
 
 /* Matrix Definition */
 #define MATRIX_CREATE_HEADER
-#define MATRIX_TYPE_NAME pixelMatrix
+#define MATRIX_TYPE_NAME PixelMatrix
 #define MATRIX_TYPE float
 #include "Matrix.h"
 
@@ -44,16 +44,16 @@ typedef struct MNIST_Images {
 
     /* Data members */
     uint32_t num_images;
-    pixelMatrix** images;
+    PixelMatrix** images;
 
     /* Methods */
 
     /**
-     * Get a pixelMatrix from the image dataset
+     * Get a PixelMatrix from the image dataset
      * @param target The MNIST_Images instance to fetch from
-     * @param index The number of the image / pixelMatrix we want to fetch
+     * @param index The number of the image / PixelMatrix we want to fetch
      */
-    pixelMatrix* (*get)(const struct MNIST_Images* target, uint32_t index);
+    PixelMatrix* (*get)(const struct MNIST_Images* target, uint32_t index);
 
     /**
      * Method to clean up a MNSIST_Images instance and free memory
@@ -63,18 +63,18 @@ typedef struct MNIST_Images {
 } MNIST_Images;
 
 /**
- * Method to create an instance of MNIST_Images, reading in the images and creating the associated pixelMatrix objects
+ * Method to create an instance of MNIST_Images, reading in the images and creating the associated PixelMatrix objects
  * @param path Path to the file containing the images
  * @returns Returns a new MNIST_Images instance pointer
  */
-MNIST_Images* init_MNIST_images(const char* path);
+MNIST_Images* MNIST_Images_init(const char* path);
 
 /**
- * Get a pixelMatrix from the image dataset
+ * Get a PixelMatrix from the image dataset
  * @param target The MNIST_Images instance to fetch from
- * @param index The number of the image / pixelMatrix we want to fetch
+ * @param index The number of the image / PixelMatrix we want to fetch
  */
-pixelMatrix* MNIST_Images_get(const MNIST_Images* target, uint32_t index);
+PixelMatrix* MNIST_Images_get(const MNIST_Images* target, uint32_t index);
 
 /**
  * Method to clean up a MNSIST_Images instance and free memory

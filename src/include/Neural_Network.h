@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-07
+ * @version: 2024-10-08
  *
  * General Notes:
  *
@@ -66,7 +66,7 @@
 
 /* Matrix Definition */
 #define MATRIX_CREATE_HEADER
-#define MATRIX_TYPE_NAME floatMatrix
+#define MATRIX_TYPE_NAME FloatMatrix
 #define MATRIX_TYPE float
 #include "Matrix.h"
 
@@ -76,21 +76,21 @@ typedef struct Neural_Network_Layer {
 
     /* Data elements */
     size_t num_neurons;
-    floatMatrix* weights;
-    floatMatrix* biases;
-    floatMatrix* outputs;
-    floatMatrix* errors;
-    floatMatrix* new_weights;
-    floatMatrix* z;
+    FloatMatrix* weights;
+    FloatMatrix* biases;
+    FloatMatrix* outputs;
+    FloatMatrix* errors;
+    FloatMatrix* new_weights;
+    FloatMatrix* z;
 
     /* Methods */
 
     /**
      * Normalize a layer
-     * @param target Pointer to the floatMatrix to normalize
-     * @returns Returns a floatMatrix with its values normalized
+     * @param target Pointer to the FloatMatrix to normalize
+     * @returns Returns a FloatMatrix with its values normalized
      */
-    floatMatrix* (*normalize)(const floatMatrix* target);
+    FloatMatrix* (*normalize)(const FloatMatrix* target);
 
     /**
      * Copy a Neural Network Layer
@@ -115,14 +115,14 @@ typedef struct Neural_Network_Layer {
  * @param import Boolean of whether or not weights / biases are being read in
  * @returns Returns a pointer to a Neural Network Layer
  */
-Neural_Network_Layer* init_Neural_Network_Layer(size_t num_neurons, size_t previous_layer_neurons, bool generate_biases, bool import);
+Neural_Network_Layer* Neural_Network_Layer_init(size_t num_neurons, size_t previous_layer_neurons, bool generate_biases, bool import);
 
 /**
  * Normalize a Neural Network Layer
- * @param target The pointer to the floatMatrix we want to normalize
- * @returns Returns a new floatMatrix with its values normalized
+ * @param target The pointer to the FloatMatrix we want to normalize
+ * @returns Returns a new FloatMatrix with its values normalized
  */
-floatMatrix* Neural_Network_Layer_normalize_layer(const floatMatrix* target);
+FloatMatrix* Neural_Network_Layer_normalize_layer(const FloatMatrix* target);
 
 /**
  * Copy a Neural Network Layer
@@ -144,7 +144,7 @@ typedef struct Threaded_Inference_Result {
     const MNIST_Images* images;
     size_t image_start_index;
     size_t num_images;
-    floatMatrix* results;
+    FloatMatrix* results;
 
     /* Methods */
 
@@ -168,9 +168,9 @@ typedef struct Neural_Network {
      * Run inference for a given input
      * @param self The Neural Network to execute inference on
      * @param image The Image to process
-     * @returns Returns a floatMatrix containing probabilities for the output
+     * @returns Returns a FloatMatrix containing probabilities for the output
      */
-    floatMatrix* (*predict)(const struct Neural_Network* self, const pixelMatrix* image);
+    FloatMatrix* (*predict)(const struct Neural_Network* self, const PixelMatrix* image);
 
     /**
      * Run inference on a batch of images. This is set up for threading
@@ -181,10 +181,10 @@ typedef struct Neural_Network {
     /**
      * Execute the training of the Neural Network
      * @param self The Neural Network to train
-     * @param image The pixelMatrix representation of the input image
+     * @param image The PixelMatrix representation of the input image
      * @param label The uint8_t label for the corresponding image
      */
-    void (*train)(struct Neural_Network* self, const pixelMatrix* image, uint8_t label);
+    void (*train)(struct Neural_Network* self, const PixelMatrix* image, uint8_t label);
 
     /**
      * Execute a batch training operation on the Neural Network
@@ -221,17 +221,17 @@ typedef struct Neural_Network {
 
     /**
      * The derivative of the cost function to apply
-     * @param target A floatMatrix to apply calculate the derivative of
+     * @param target A FloatMatrix to apply calculate the derivative of
      */
-    floatMatrix* (*cost_derivative)(const floatMatrix* target);
+    FloatMatrix* (*cost_derivative)(const FloatMatrix* target);
 
     /**
      * Delta placeholder function
      * @param actual Actual value(s)
      * @param output Output(s) from the final layer
-     * @returns Returns a floatMatrix with the delta (however that is calculate for your activation)
+     * @returns Returns a FloatMatrix with the delta (however that is calculate for your activation)
      */
-    floatMatrix* (*delta)(const floatMatrix* actual, const floatMatrix* output);
+    FloatMatrix* (*delta)(const FloatMatrix* actual, const FloatMatrix* output);
 
     /**
      * Cleans up a Neural Network instance
@@ -249,7 +249,7 @@ typedef struct Neural_Network {
  * @param generate_biases Generate random biases if true, set to zero if false
  * @returns Returns a pointer to a Neural Network
  */
-Neural_Network* init_Neural_Network(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases);
+Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases);
 
 /**
  * Cleans up a Neural Network instance
@@ -261,9 +261,9 @@ void Neural_Network_clear(Neural_Network* target);
  * Run inference for a given input
  * @param self The Neural Network to execute inference on
  * @param image The Image to process
- * @returns Returns a floatMatrix containing probabilities for the output
+ * @returns Returns a FloatMatrix containing probabilities for the output
  */
-floatMatrix* Neural_Network_predict(const Neural_Network* self, const pixelMatrix* image);
+FloatMatrix* Neural_Network_predict(const Neural_Network* self, const PixelMatrix* image);
 
 /**
  * Run inference on a batch of images. This is set up for threading
@@ -283,51 +283,51 @@ float Neural_Network_sigmoid(float z);
  * @param target The Matrix to calculate the sigmoid prime of -- this should already have sigmoid applied to it
  * @returns Returns a new Matrix of sigmoid prime values
  */
-floatMatrix* Neural_Network_sigmoid_prime(const floatMatrix* target);
+FloatMatrix* Neural_Network_sigmoid_prime(const FloatMatrix* target);
 
 /**
  * Calculate the error / delta for sigmoid output layers
  * @param actual Actual value(s)
  * @param output The output(s) from the NN
- * @returns Returns a floatMatrix containing `actual - output`
+ * @returns Returns a FloatMatrix containing `actual - output`
  */
-floatMatrix* Neural_Network_sigmoid_delta(const floatMatrix* actual, const floatMatrix* output);
+FloatMatrix* Neural_Network_sigmoid_delta(const FloatMatrix* actual, const FloatMatrix* output);
 
 /**
  * Calculate the softmax of a Matrix
  * @param target The Matrix to calculate the softmax for
  * @returns Returns a new Matrix of softmax
  */
-floatMatrix* Neural_Network_softmax(const floatMatrix* target);
+FloatMatrix* Neural_Network_softmax(const FloatMatrix* target);
 
 /**
- * Convert a pixelMatrix to floatMatrix
- * @param pixels pixelMatrix instance to read from
- * @returns Returns a new floatMatrix
+ * Convert a PixelMatrix to FloatMatrix
+ * @param pixels PixelMatrix instance to read from
+ * @returns Returns a new FloatMatrix
  */
-floatMatrix* Neural_Network_convert_pixelMatrix(const pixelMatrix* pixels);
+FloatMatrix* Neural_Network_convert_PixelMatrix(const PixelMatrix* pixels);
 
 /**
- * Create a floatMatrix containing the right label
+ * Create a FloatMatrix containing the right label
  * @param label The label for the image
- * @returns Returns a floatMatrix with a singular 1 for the right label
+ * @returns Returns a FloatMatrix with a singular 1 for the right label
  */
-floatMatrix* Neural_Network_create_label(uint8_t label);
+FloatMatrix* Neural_Network_create_label(uint8_t label);
 
 /**
  * Run inference against a single image and update the outputs without running softmax
  * @param self The Neural Network to run training on
- * @param flat_image The image (already flat and in floatMatrix format) to run inference on
+ * @param flat_image The image (already flat and in FloatMatrix format) to run inference on
  */
-void Neural_Network_training_predict(Neural_Network* self, const floatMatrix* flat_image);
+void Neural_Network_training_predict(Neural_Network* self, const FloatMatrix* flat_image);
 
 /**
  * Execute the training of the Neural Network
  * @param self The Neural Network to train
- * @param image The pixelMatrix representation of the input image
+ * @param image The PixelMatrix representation of the input image
  * @param label The uint8_t label for the corresponding image
  */
-void Neural_Network_train(Neural_Network* self, const pixelMatrix* image, uint8_t label);
+void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_t label);
 
 /**
  * Execute a batch of training
@@ -362,10 +362,10 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self);
 
 /**
  * Expand the regular bias vector to a Matrix for use with (mini)batches
- * @param current_bias The floatMatrix containing the current bias vector
+ * @param current_bias The FloatMatrix containing the current bias vector
  * @param batch_size The size of the batch, i.e. the number of copies of the vector we want in the Matrix
  */
-floatMatrix* Neural_Network_expand_bias(const floatMatrix* current_bias, size_t batch_size);
+FloatMatrix* Neural_Network_expand_bias(const FloatMatrix* current_bias, size_t batch_size);
 
 /**
  * Cleans up Threaded Inference Result
@@ -378,7 +378,7 @@ void Threaded_Inference_Result_clear( Threaded_Inference_Result* target);
  * @param images Pointer to MNIST_Images
  * @param image_start_index Start index of the images to be processed
  * @param num_images Number of images processed by this thread
- * @returns Returns a Threaded Inference Result and sets up the floatMatrix inside
+ * @returns Returns a Threaded Inference Result and sets up the FloatMatrix inside
  */
 Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* nn, const MNIST_Images* images,
     size_t image_start_index, size_t num_images);
