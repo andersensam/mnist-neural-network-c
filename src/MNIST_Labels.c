@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-08
+ * @version: 2024-10-09
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -50,7 +50,7 @@ MNIST_Labels* MNIST_Labels_init(const char* path) {
     }
 
     // Allocate the memory to store the labels
-    MNIST_Labels* target = calloc(1, sizeof(MNIST_Labels));
+    MNIST_Labels* target = malloc(sizeof(MNIST_Labels));
 
     if (target == NULL) {
 

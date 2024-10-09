@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-08
+ * @version: 2024-10-09
  *
  * General Notes:
  *
@@ -59,7 +59,7 @@ void Neural_Network_clear(Neural_Network* target) {
 
 Neural_Network_Layer* Neural_Network_Layer_init(size_t num_neurons, size_t previous_layer_neurons, bool generate_biases, bool import) {
 
-    Neural_Network_Layer* target = calloc(1, sizeof(Neural_Network_Layer));
+    Neural_Network_Layer* target = malloc(sizeof(Neural_Network_Layer));
 
     if (target == NULL) {
 
@@ -516,7 +516,7 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
     }
 }
 
-void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t batch_size) {
+void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t target_batch_size) {
 
     if (self == NULL || images == NULL || labels == NULL) {
 
@@ -544,97 +544,55 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
     }
 
     // Information about the batches
-    size_t num_batches = num_train / batch_size;
-    size_t final_batch_size = num_train - (batch_size * num_batches);
+    size_t num_batches = num_train / target_batch_size;
+    size_t final_batch_size = num_train - (target_batch_size * num_batches);
     size_t current_index = 0;
 
     // Iterate over the number of batches, ensuring we catch the last (potentially smaller) batch
     for (size_t i = 0; i <= num_batches; ++i) {
 
-        // Handle the last batch differently
-        if (i == num_batches) {
+        size_t batch_size = (i == num_batches) ? final_batch_size : target_batch_size;
 
-            if (final_batch_size == 0) { continue; }
+        // If the final_batch_size is zero, we know the batches divided the number of training images evenly
+        if (batch_size == 0) { continue; }
 
-            // Set up the inputs and correct outputs 
-            inputs = FloatMatrix_init(MNIST_IMAGE_SIZE, final_batch_size);
-            outputs = FloatMatrix_init(MNIST_LABELS, final_batch_size);
-            outputs->populate(outputs, 0);
+        // Allocate a FloatMatrix that will contain batch_size number of images
+        inputs = FloatMatrix_init(MNIST_IMAGE_SIZE, batch_size);
+        outputs = FloatMatrix_init(MNIST_LABELS, batch_size);
+        outputs->populate(outputs, 0);
 
-            // Set up a Matrix of ones for getting the bias error
-            ones = FloatMatrix_init(final_batch_size, 1);
-            ones->populate(ones, 1);
+        // Set up a Matrix of ones for getting the bias error
+        ones = FloatMatrix_init(batch_size, 1);
+        ones->populate(ones, 1);
 
-            // Insert the image data into the larger input Matrix
-            for (size_t j = 0; j < final_batch_size; ++j) {
+        // Insert the image data into the larger input Matrix
+        for (size_t j = 0; j < batch_size; ++j) {
 
-                converted_image = Neural_Network_convert_PixelMatrix(images->get(images, current_index + j));
-                flat_image = converted_image->flatten(converted_image, COLUMN);
+            converted_image = Neural_Network_convert_PixelMatrix(images->get(images, current_index + j));
+            flat_image = converted_image->flatten(converted_image, COLUMN);
 
-                converted_image->clear(converted_image);
-                converted_image = NULL;
+            converted_image->clear(converted_image);
+            converted_image = NULL;
 
-                for (size_t k = 0; k < flat_image->num_rows; ++k) {
+            for (size_t k = 0; k < flat_image->num_rows; ++k) {
 
-                    inputs->set(inputs, k, j, flat_image->get(flat_image, k, 0));
-                }
-
-                flat_image->clear(flat_image);
-                flat_image = NULL;
-
-                // Set the correct output as 1.0 in the output Matrix
-                outputs->set(outputs, labels->get(labels, current_index + j), j, 1);
+                inputs->set(inputs, k, j, flat_image->get(flat_image, k, 0));
             }
 
-            // Update the bias vectors to be Matrix, ignoring the first layer of course
-            for (size_t j = 1; j < self->num_layers; ++j) {
+            flat_image->clear(flat_image);
+            flat_image = NULL;
 
-                expanded_bias = Neural_Network_expand_bias(self->layers[j]->biases, final_batch_size);
-
-                self->layers[j]->biases->clear(self->layers[j]->biases);
-                self->layers[j]->biases = expanded_bias;
-            }
+            // Set the correct output as 1.0 in the output Matrix
+            outputs->set(outputs, labels->get(labels, current_index + j), j, 1);
         }
-        else {
 
-            // Allocate a FloatMatrix that will contain batch_size number of images
-            inputs = FloatMatrix_init(MNIST_IMAGE_SIZE, batch_size);
-            outputs = FloatMatrix_init(MNIST_LABELS, batch_size);
-            outputs->populate(outputs, 0);
+        // Update the bias vectors to be Matrix, ignoring the first layer of course
+        for (size_t j = 1; j < self->num_layers; ++j) {
 
-            // Set up a Matrix of ones for getting the bias error
-            ones = FloatMatrix_init(batch_size, 1);
-            ones->populate(ones, 1);
+            expanded_bias = Neural_Network_expand_bias(self->layers[j]->biases, batch_size);
 
-            // Insert the image data into the larger input Matrix
-            for (size_t j = 0; j < batch_size; ++j) {
-
-                converted_image = Neural_Network_convert_PixelMatrix(images->get(images, current_index + j));
-                flat_image = converted_image->flatten(converted_image, COLUMN);
-
-                converted_image->clear(converted_image);
-                converted_image = NULL;
-
-                for (size_t k = 0; k < flat_image->num_rows; ++k) {
-
-                    inputs->set(inputs, k, j, flat_image->get(flat_image, k, 0));
-                }
-
-                flat_image->clear(flat_image);
-                flat_image = NULL;
-
-                // Set the correct output as 1.0 in the output Matrix
-                outputs->set(outputs, labels->get(labels, current_index + j), j, 1);
-            }
-
-            // Update the bias vectors to be Matrix, ignoring the first layer of course
-            for (size_t j = 1; j < self->num_layers; ++j) {
-
-                expanded_bias = Neural_Network_expand_bias(self->layers[j]->biases, batch_size);
-
-                self->layers[j]->biases->clear(self->layers[j]->biases);
-                self->layers[j]->biases = expanded_bias;
-            }
+            self->layers[j]->biases->clear(self->layers[j]->biases);
+            self->layers[j]->biases = expanded_bias;
         }
 
         /* Run inference on the Matrix of inputs and store their outputs in each layer */
@@ -682,19 +640,8 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
         // Update the weights for each layer
         for (size_t j = 1; j < self->num_layers; ++j) {
 
-            // Handle the last batch with special care since it may be smaller than the others
-            if (i == num_batches) {
-
-                // Divide the sum of deltas per layer by the batch size and multiply by learning rate
-                nabla_w[j]->scale_o(nabla_w[j], self->learning_rate / (float)final_batch_size);
-                nabla_b[j]->scale_o(nabla_b[j], self->learning_rate / (float)final_batch_size);
-
-            }
-            else {
-
-                nabla_w[j]->scale_o(nabla_w[j], self->learning_rate / (float)batch_size);
-                nabla_b[j]->scale_o(nabla_b[j], self->learning_rate / (float)batch_size);
-            }
+            nabla_w[j]->scale_o(nabla_w[j], self->learning_rate / (float)batch_size);
+            nabla_b[j]->scale_o(nabla_b[j], self->learning_rate / (float)batch_size);
 
             // Add the processed changes to the original weights
             self->layers[j]->weights->add_o(self->layers[j]->weights, nabla_w[j]);
@@ -946,7 +893,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
     }
 
     // Once we have all the information, create a new Neural Network
-    Neural_Network* target = calloc(1, sizeof(Neural_Network));
+    Neural_Network* target = malloc(sizeof(Neural_Network));
 
     if (target == NULL) {
 
@@ -1146,7 +1093,7 @@ Neural_Network* import_Neural_Network(const char* filename) {
 
 Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases) {
 
-    Neural_Network* target = calloc(1, sizeof(Neural_Network));
+    Neural_Network* target = malloc(sizeof(Neural_Network));
 
     if (target == NULL) {
 
@@ -1190,7 +1137,7 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self) {
         exit(EXIT_FAILURE);
     }
 
-    Neural_Network* target = calloc(1, sizeof(Neural_Network));
+    Neural_Network* target = malloc(sizeof(Neural_Network));
 
     if (target == NULL) {
 
@@ -1277,7 +1224,7 @@ Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* 
         exit(EXIT_FAILURE);
     }
 
-    Threaded_Inference_Result* target = calloc(1, sizeof(Threaded_Inference_Result));
+    Threaded_Inference_Result* target = malloc(sizeof(Threaded_Inference_Result));
 
     if (target == NULL) {
 

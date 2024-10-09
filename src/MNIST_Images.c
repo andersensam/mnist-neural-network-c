@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-08
+ * @version: 2024-10-09
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -66,7 +66,7 @@ MNIST_Images* MNIST_Images_init(const char* path) {
     }
 
     // Allocate the memory to store the images
-    MNIST_Images* target = calloc(1, sizeof(MNIST_Images));
+    MNIST_Images* target = malloc(sizeof(MNIST_Images));
 
     if (target == NULL) {
 

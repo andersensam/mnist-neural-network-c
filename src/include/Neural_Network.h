@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-08
+ * @version: 2024-10-09
  *
  * General Notes:
  *
@@ -192,9 +192,9 @@ typedef struct Neural_Network {
      * @param images The MNIST_Images instance to pull from
      * @param labels The MNIST_Labels instance to validate labels from
      * @param num_train The number of images to train on from the dataset
-     * @param batch_size The number of images to train against in this batch
+     * @param target_batch_size The number of images to train against in this batch
      */
-    void (*batch_train)(struct Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t batch_size);
+    void (*batch_train)(struct Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t target_batch_size);
 
     /**
      * Save the Neural Network to a file
@@ -335,9 +335,9 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
  * @param images The MNIST_Images instance to pull from
  * @param labels The MNIST_Labels instance to validate labels from
  * @param num_train The number of images to train on from the dataset
- * @param batch_size The number of images to train against in this batch
+ * @param target_batch_size The number of images to train against in this batch
  */
-void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t batch_size);
+void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images, const MNIST_Labels* labels, size_t num_train, size_t target_batch_size);
 
 /**
  * Save the Neural Network to a file

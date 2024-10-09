@@ -409,12 +409,6 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(add)(const MATRIX_TYPE_NAME *self, const MATRIX_
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(self->num_rows, self->num_cols);
 
-    if (result == NULL) { 
-
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for addition Matrix result\n"); }
-        exit(EXIT_FAILURE);
-    }
-
     for (size_t i = 0; i < self->num_rows; ++i) {
 
         for (size_t j = 0; j < self->num_cols; ++j) {
@@ -537,12 +531,6 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(scale)(const MATRIX_TYPE_NAME *target, MATRIX_TY
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(target->num_rows, target->num_cols);
 
-    if (result == NULL) {
-
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the scale operation\n"); }
-        exit(EXIT_FAILURE);
-    }
-
     for (size_t i = 0; i < target->num_rows; ++i) {
 
         for (size_t j = 0; j < target->num_cols; ++j) {
@@ -594,12 +582,6 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(add_scalar)(const MATRIX_TYPE_NAME *target, MATR
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(target->num_rows, target->num_cols);
 
-    if (result == NULL) {
-
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the add scalar operation\n"); }
-        exit(EXIT_FAILURE);
-    }
-
     for (size_t i = 0; i < target->num_rows; ++i) {
 
         for (size_t j = 0; j < target->num_cols; ++j) {
@@ -650,12 +632,6 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(apply)(const MATRIX_TYPE_NAME *target, MATRIX_TY
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(target->num_rows, target->num_cols);
-
-    if (result == NULL) {
-
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the apply operation\n"); }
-        exit(EXIT_FAILURE);
-    }
 
     for (size_t i = 0; i < target->num_rows; ++i) {
 
@@ -709,12 +685,6 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(apply_second)(const MATRIX_TYPE_NAME *target, MA
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(target->num_rows, target->num_cols);
 
-    if (result == NULL) {
-
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for the apply_second operation\n"); }
-        exit(EXIT_FAILURE);
-    }
-
     for (size_t i = 0; i < target->num_rows; ++i) {
 
         for (size_t j = 0; j < target->num_cols; ++j) {
@@ -749,12 +719,6 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(multiply)(const MATRIX_TYPE_NAME *self, const MA
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(self->num_rows, self->num_cols);
-
-    if (result == NULL) { 
-
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for multiplication Matrix result\n"); }
-        exit(EXIT_FAILURE);
-    }
 
     for (size_t i = 0; i < self->num_rows; ++i) {
 
@@ -835,12 +799,6 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(copy)(const MATRIX_TYPE_NAME *target) {
     }
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(target->num_rows, target->num_cols);
-
-    if (result == NULL) { 
-
-        if (MATRIX_DEBUG) { fprintf(stderr, "ERR: Unable to allocate memory for copying Matrix\n"); }
-        exit(EXIT_FAILURE);
-    }
 
    memcpy(&(result->data[0]), &(target->data[0]), target->num_rows * target->num_cols * sizeof(MATRIX_TYPE));
 
