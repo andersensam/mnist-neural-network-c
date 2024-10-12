@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-09
+ * @version: 2024-10-12
  *
  * General Notes:
  *
@@ -351,7 +351,7 @@ void Neural_Network_save(const Neural_Network* self, bool include_biases, const 
  * Import a Neural Network from a file
  * @param filename The filename of the Neural Network to import
  */
-Neural_Network* import_Neural_Network(const char* filename);
+Neural_Network* Neural_Network_import(const char* filename);
 
 /**
  * Create a copy of a Neural Network
@@ -380,7 +380,7 @@ void Threaded_Inference_Result_clear( Threaded_Inference_Result* target);
  * @param num_images Number of images processed by this thread
  * @returns Returns a Threaded Inference Result and sets up the FloatMatrix inside
  */
-Threaded_Inference_Result* init_Threaded_Inference_Result(const Neural_Network* nn, const MNIST_Images* images,
+Threaded_Inference_Result* Threaded_Inference_Result_init(const Neural_Network* nn, const MNIST_Images* images,
     size_t image_start_index, size_t num_images);
 
 #endif

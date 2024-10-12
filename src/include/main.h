@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-09-30
+ * @version: 2024-10-12
  *
  * General Notes:
  *
@@ -69,6 +69,31 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
  */
 void train_new_model_batched(const char* labels_path, const char* images_path, size_t num_layers, const size_t* nn_config,
     float learning_rate, bool generate_biases, size_t num_training_images, size_t batch_size, size_t epochs, const char* model_path);
+
+/**
+ * Function to run additional training on an existing, saving it to a file when complete
+ * @param labels_path Path to the labels for the data
+ * @param images_path Path to the images
+ * @param num_training_images Number of training images to train on
+ * @param epochs Number of epochs to run
+ * @param model_path Path to the existing model
+ * @param updated_model_path Path to save the updated model
+ */
+void train_existing_model(const char* labels_path, const char* images_path, size_t num_training_images, size_t epochs,
+    const char* model_path, const char* updated_model_path);
+
+/**
+ * Function to run additional training on an existing, saving it to a file when complete
+ * @param labels_path Path to the labels for the data
+ * @param images_path Path to the images
+ * @param num_training_images Number of training images to train on
+ * @param batch_size Batch size to use for training
+ * @param epochs Number of epochs to run
+ * @param model_path Path to the existing model
+ * @param updated_model_path Path to save the updated model
+ */
+void train_existing_model_batched(const char* labels_path, const char* images_path, size_t num_training_images, 
+    size_t batch_size, size_t epochs, const char* model_path, const char* updated_model_path);
 
 /**
  * Function to perform inference on a pretrained model
