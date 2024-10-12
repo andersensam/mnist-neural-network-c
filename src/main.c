@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-08
+ * @version: 2024-10-12
  *
  * General Notes:
  *
@@ -31,7 +31,7 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
 
     if (num_training_images > images->num_images) {
 
-        fprintf(stderr, "ERR: num_training_images cannot be greater than number of images in dataset\n");
+        fprintf(stderr, "ERR: <train_new_model> num_training_images cannot be greater than number of images in dataset\n");
         images->clear(images);
         labels->clear(labels);
 
@@ -40,7 +40,7 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
 
     if (labels->num_labels != images->num_images) {
 
-        fprintf(stderr, "ERR: Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        fprintf(stderr, "ERR: <train_new_model> Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
         images->clear(images);
         labels->clear(labels);
 
@@ -110,7 +110,7 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
 
     if (num_training_images > images->num_images) {
 
-        fprintf(stderr, "ERR: num_training_images cannot be greater than number of images in dataset\n");
+        fprintf(stderr, "ERR: <train_new_model_batched> num_training_images cannot be greater than number of images in dataset\n");
         images->clear(images);
         labels->clear(labels);
 
@@ -119,7 +119,7 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
 
     if (labels->num_labels != images->num_images) {
 
-        fprintf(stderr, "ERR: Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        fprintf(stderr, "ERR: <train_new_model_batched> Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
         images->clear(images);
         labels->clear(labels);
 
@@ -159,6 +159,148 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
     return;
 }
 
+void train_existing_model(const char* labels_path, const char* images_path, size_t num_training_images, size_t epochs, const char* model_path,
+    const char* updated_model_path) {
+
+    // Load image dataset and associated labels
+    log_message("Starting to load MNIST labels");
+    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    log_message("Finished loading MNIST labels");
+
+    log_message("Starting to load MNIST images");
+    MNIST_Images* images = MNIST_Images_init(images_path);
+    log_message("Finished loading MNIST images");
+
+    if (num_training_images > images->num_images) {
+
+        fprintf(stderr, "ERR: <train_existing_model> num_training_images cannot be greater than number of images in dataset\n");
+        images->clear(images);
+        labels->clear(labels);
+
+        exit(EXIT_FAILURE);
+    }
+
+    if (labels->num_labels != images->num_images) {
+
+        fprintf(stderr, "ERR: <train_existing_model> Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        images->clear(images);
+        labels->clear(labels);
+
+        exit(EXIT_FAILURE);
+    }
+
+    // Initalize the Neural Network
+    Neural_Network* nn = Neural_Network_import(model_path);
+
+    // Setup some variables that we'll use again and again in the loop
+    PixelMatrix* current_image = NULL;
+    uint8_t current_label = 0;
+
+    // Define where to start in the training dataset and how many samples to train on
+    size_t training_start_idx = 0;
+
+    // Use a buffer for snprintf
+    char buffer[100];
+    memset(buffer, '\0', 100);
+
+    log_message("Starting model online training for existing model");
+
+    // Execute the training over the number of epochs
+    for (size_t i = 0; i < epochs; ++i) {
+
+        if (SHOW_EPOCH) {
+
+            snprintf(buffer, 100, "INFO: Starting online training epoch %zu", i);
+            log_message(buffer);
+        }
+
+        // Set i to the range of images + labels we want to train on
+        for (size_t j = training_start_idx; j < training_start_idx + num_training_images; ++j) {
+
+            current_image = images->get(images, j);
+            current_label = labels->get(labels, j);
+
+            // Execute the training on the current image + label
+            nn->train(nn, current_image, current_label);
+        }
+    }
+
+    log_message("Finished model online training for existing model");
+
+    log_message("Saving updated model");
+    nn->save(nn, true, updated_model_path);
+    log_message("Finished saving updated model");
+
+    labels->clear(labels);
+    images->clear(images);
+    nn->clear(nn);
+
+    return;
+}
+
+void train_existing_model_batched(const char* labels_path, const char* images_path, size_t num_training_images, 
+    size_t batch_size, size_t epochs, const char* model_path, const char* updated_model_path) {
+
+    // Load image dataset and associated labels
+    log_message("Starting to load MNIST labels");
+    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    log_message("Finished loading MNIST labels");
+
+    log_message("Starting to load MNIST images");
+    MNIST_Images* images = MNIST_Images_init(images_path);
+    log_message("Finished loading MNIST images");
+
+    if (num_training_images > images->num_images) {
+
+        fprintf(stderr, "ERR: <train_existing_model_batched> num_training_images cannot be greater than number of images in dataset\n");
+        images->clear(images);
+        labels->clear(labels);
+
+        exit(EXIT_FAILURE);
+    }
+
+    if (labels->num_labels != images->num_images) {
+
+        fprintf(stderr, "ERR: <train_existing_model_batched> Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        images->clear(images);
+        labels->clear(labels);
+
+        exit(EXIT_FAILURE);
+    }
+
+    // Initalize the Neural Network
+    Neural_Network* nn = Neural_Network_import(model_path);
+
+    // Use a buffer for snprintf
+    char buffer[100];
+    memset(buffer, '\0', 100);
+
+    log_message("Starting batch model training for existing model");
+
+    for (size_t i = 0; i < epochs; ++i) {
+
+        if (SHOW_EPOCH) {
+
+            snprintf(buffer, 100, "INFO: Starting batch training epoch %zu", i);
+            log_message(buffer);
+        }
+
+        nn->batch_train(nn, images, labels, num_training_images, batch_size);
+    }
+
+    log_message("Finished batch model training for existing model");
+
+    log_message("Saving updated model");
+    nn->save(nn, true, updated_model_path);
+    log_message("Finished saving updated model");
+
+    nn->clear(nn);
+    labels->clear(labels);
+    images->clear(images);
+
+    return;
+}
+
 void inference(const char* labels_path, const char* images_path, const char* model_path, size_t num_predict) {
 
     // Load image dataset and associated labels
@@ -172,7 +314,7 @@ void inference(const char* labels_path, const char* images_path, const char* mod
 
     if (num_predict > images->num_images) {
 
-        fprintf(stderr, "ERR: num_predict cannot be greater than number of images in dataset\n");
+        fprintf(stderr, "ERR: <inference> num_predict cannot be greater than number of images in dataset\n");
         images->clear(images);
         labels->clear(labels);
 
@@ -181,7 +323,7 @@ void inference(const char* labels_path, const char* images_path, const char* mod
 
     if (labels->num_labels != images->num_images) {
 
-        fprintf(stderr, "ERR: Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        fprintf(stderr, "ERR: <inference> Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
         images->clear(images);
         labels->clear(labels);
 
@@ -189,7 +331,7 @@ void inference(const char* labels_path, const char* images_path, const char* mod
     }
 
     log_message("Starting to load model from file");
-    Neural_Network* nn = import_Neural_Network(model_path);
+    Neural_Network* nn = Neural_Network_import(model_path);
     log_message("Finished loading model from file");
 
     // Setup some variables that we'll use again and again in the loop
@@ -246,7 +388,7 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
     if (num_predict > images->num_images) {
 
-        fprintf(stderr, "ERR: num_predict cannot be greater than number of images in dataset\n");
+        fprintf(stderr, "ERR: <threaded_inference> num_predict cannot be greater than number of images in dataset\n");
         images->clear(images);
         labels->clear(labels);
 
@@ -255,7 +397,7 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
     if (labels->num_labels != images->num_images) {
 
-        fprintf(stderr, "ERR: Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        fprintf(stderr, "ERR: <threaded_inference> Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
         images->clear(images);
         labels->clear(labels);
 
@@ -263,7 +405,7 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
     }
 
     log_message("Starting to load model from file");
-    Neural_Network* nn = import_Neural_Network(model_path);
+    Neural_Network* nn = Neural_Network_import(model_path);
     log_message("Finished loading model from file");
 
     // Define the threads we'll use (configure in main.h)
@@ -282,15 +424,15 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
         if (i == 0) {
 
-            thread_results[i] = init_Threaded_Inference_Result(nn, images, 0, images_per_thread);
+            thread_results[i] = Threaded_Inference_Result_init(nn, images, 0, images_per_thread);
         }
         else if (i == INFERENCE_MAX_THREADS - 1) {
 
-            thread_results[i] = init_Threaded_Inference_Result(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, final_thread_images);
+            thread_results[i] = Threaded_Inference_Result_init(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, final_thread_images);
         }
         else {
 
-            thread_results[i] = init_Threaded_Inference_Result(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, images_per_thread);
+            thread_results[i] = Threaded_Inference_Result_init(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, images_per_thread);
         }
 
         pthread_create(&(thread_ids[i]), NULL, nn->threaded_predict, (void*)(thread_results[i]));
@@ -343,7 +485,7 @@ int main(int argc, char* argv[]) {
 
     if (argc <= 1) {
 
-        fprintf(stderr, "Too few arguments provided. Use main help to get a help menu. Exiting\n");
+        fprintf(stderr, "ERR: <main> Too few arguments provided. Use main help to get a help menu. Exiting\n");
         return 1;
     }
 
@@ -359,7 +501,7 @@ int main(int argc, char* argv[]) {
 
         if (argc <= (9 + atoi(argv[6]))) {
 
-            fprintf(stderr, "ERR: Too few arguments provided to train\n");
+            fprintf(stderr, "ERR: <main> Too few arguments provided to train\n");
             return 1;
         }
 
@@ -386,6 +528,41 @@ int main(int argc, char* argv[]) {
         free(nn_config);
         return 0;
     }
+    else if (strncmp(argv[1], "update-online", 13) == 0) {
+
+        /*
+         * For update-online, expect: labels_path (2), images_path (3), num_images (4), epochs (5), existing_model_path (6)
+         * updated_model_path (7)
+         */
+
+        if (argc < 7) {
+
+            fprintf(stderr, "ERR: <main> Too few arguments provided to update-online\n");
+            return 1;
+        }
+
+        train_existing_model(argv[2], argv[3], (size_t)atoi(argv[4]), (size_t)atoi(argv[5]), argv[6], argv[7]);
+
+        return 0;
+    }
+    else if (strncmp(argv[1], "update-batch", 12) == 0) {
+
+        /*
+         * For update-batch, expect: labels_path (2), images_path (3), num_images (4), batch_size (5) epochs (6), 
+         * existing_model_path (7), updated_model_path (8)
+         */
+
+        if (argc < 8) {
+
+            fprintf(stderr, "ERR: <main> Too few arguments provided to update-batch\n");
+            return 1;
+        }
+
+        train_existing_model_batched(argv[2], argv[3], (size_t)atoi(argv[4]), (size_t)atoi(argv[5]), 
+            (size_t)atoi(argv[6]), argv[7], argv[8]);
+
+        return 0;
+    }
     else if (strncmp(argv[1], "batch-train", 11) == 0) {
 
         /*
@@ -395,7 +572,7 @@ int main(int argc, char* argv[]) {
 
         if (argc <= (10 + atoi(argv[6]))) {
 
-            fprintf(stderr, "ERR: Too few arguments provided to batch-train\n");
+            fprintf(stderr, "ERR: <main> Too few arguments provided to batch-train\n");
             return 1;
         }
 
@@ -426,7 +603,7 @@ int main(int argc, char* argv[]) {
 
         if (argc < 6) {
 
-            fprintf(stderr, "ERR: Too few arguments provided to predict\n");
+            fprintf(stderr, "ERR: <main> Too few arguments provided to predict\n");
             return 1;
         }
 
@@ -438,7 +615,7 @@ int main(int argc, char* argv[]) {
 
         if (argc < 6) {
 
-            fprintf(stderr, "ERR: Too few arguments provided to use threaded-predict\n");
+            fprintf(stderr, "ERR: <main> Too few arguments provided to use threaded-predict\n");
             return 1;
         }
 
@@ -456,6 +633,12 @@ int main(int argc, char* argv[]) {
         printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 10 10 model.model\n\n");
         printf("This example has a learning rate of 0.1, uses biases, has 3 layers,uses 1000 images to train on, with a batch size of 10, and 10 epochs\n");
 
+        printf("\n\nExpected usage: main update-online labels_path images_path num_training_images epochs model_path updated_model_path\n");
+        printf("Example for update: main update-online /labels data/images 1000 3 models/existing_model models/updated_model\n");
+
+        printf("\n\nExpected usage: main update-batch labels_path images_path num_training_images batch_size epochs model_path updated_model_path\n");
+        printf("Example for update: main update-batch data/labels data/images 1000 8 3 models/existing_model models/updated_model\n");
+
         printf("\n\nExpected usage: main predict labels_path images_path num_predict model_path\n");
         printf("Example for predict: main predict data/labels data/images 100 model.model\n\n");
         printf("This example predicts 100 images");
@@ -467,6 +650,6 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    fprintf(stderr, "ERR: Invalid argument passed to main. Exiting\n");
+    fprintf(stderr, "ERR: <main> Invalid argument passed to main. Exiting\n");
     return 1;
 }

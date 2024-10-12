@@ -86,6 +86,35 @@ $ ./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 
 [2024-09-18 23:33:00]: Finished saving model
 ```
 
+#### Retraining an existing Model (online)
+
+In the event that you'd like to train and existing model with more data, use the following:
+
+```
+./target/main update-online <path to labels> <path to images> <images to train on> <epochs> <existing model path> <updated model path>
+```
+
+An example is:
+```
+./target/main update-online data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 3 test.model updated.model
+```
+
+We import the existing model and its metadata, then train on 20000 images by three epochs, saving to `updated.model`
+
+```
+$ ./target/main update-online data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 3 test.model updated.model
+[2024-10-12 12:20:03]: Starting to load MNIST labels
+[2024-10-12 12:20:03]: Finished loading MNIST labels
+[2024-10-12 12:20:03]: Starting to load MNIST images
+[2024-10-12 12:20:04]: Finished loading MNIST images
+[2024-10-12 12:20:04]: Starting model online training for existing model
+[2024-10-12 12:20:10]: Finished model online training for existing model
+[2024-10-12 12:20:10]: Saving updated model
+[2024-10-12 12:20:10]: Finished saving updated model
+```
+
+*Note: retraining an existing model preserves the original learning rate*
+
 ### (Mini)batch Training of the Neural Network
 
 Using (mini)batch, we can train the Neural Network with the following syntax:
@@ -118,6 +147,35 @@ $ ./target/main batch-train data/train-labels-idx1-ubyte data/train-images-idx3-
 ```
 
 As you can set the batch size to whatever you'd like, you could use the batch size as the total training image size for full batch training.
+
+#### Retraining an existing Model (batch)
+
+In the event that you'd like to train and existing model with more data with batching, use the following:
+
+```
+./target/main update-batch <path to labels> <path to images> <images to train on> <batch size> <epochs> <existing model path> <updated model path>
+```
+
+An example is:
+```
+./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 8 3 test.model updated.model
+```
+
+We import the existing model and its metadata, then train on 20000 images by three epochs (with batch size 8), saving to `updated.model`
+
+```
+$ ./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 8 3 test.model updated.model
+[2024-10-12 12:20:55]: Starting to load MNIST labels
+[2024-10-12 12:20:55]: Finished loading MNIST labels
+[2024-10-12 12:20:55]: Starting to load MNIST images
+[2024-10-12 12:20:55]: Finished loading MNIST images
+[2024-10-12 12:20:55]: Starting batch model training for existing model
+[2024-10-12 12:21:01]: Finished batch model training for existing model
+[2024-10-12 12:21:01]: Saving updated model
+[2024-10-12 12:21:01]: Finished saving updated model
+```
+
+*Note: retraining an existing model preserves the original learning rate*
 
 ### Running Inference
 
