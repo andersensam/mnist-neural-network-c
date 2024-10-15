@@ -237,35 +237,6 @@ FloatMatrix* Neural_Network_predict(const Neural_Network* self, const PixelMatri
     return final_output;
 }
 
-void* Neural_Network_threaded_predict(void* thread_void) {
-
-    if (thread_void == NULL) {
-
-        fprintf(stderr, "ERR: <Neural_Network_threaded_predict> Invalid Threaded_Inference_Results provided to batch_predict\n");
-        exit(EXIT_FAILURE);
-    }
-
-    Threaded_Inference_Result* thread = (Threaded_Inference_Result*)thread_void;
-    
-    // Create a FloatMatrix reference to use as we iterate over the images
-    FloatMatrix* current_result = NULL;
-
-    for (size_t i = 0; i < thread->num_images; ++i) {
-
-        current_result = Neural_Network_predict(thread->nn, thread->images->get(thread->images, i + thread->image_start_index));
-
-        for (size_t j = 0; j < current_result->num_rows; ++j) {
-
-            // For the output of each image, copy each row of the Vector into the corresponding coordinate in the Matrix
-            thread->results->set(thread->results, j, i, current_result->get(current_result, j, 0));
-        }
-
-        current_result->clear(current_result);
-    }
-
-    return NULL;
-}
-
 float Neural_Network_sigmoid(float z) {
 
     return 1.0f / (1 + exp(-1 * z));
@@ -519,7 +490,7 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
         fprintf(stderr, "ERR: <Neural_Network_batch_train> Invalid Neural Network, MNIST_Images, or MNIST_Labels provided to batch_train\n");
         exit(EXIT_FAILURE);
     }
-
+    
     // Define variables we're going to use throughout the loops
     FloatMatrix* inputs = NULL;
     FloatMatrix* flat_image = NULL;
@@ -922,7 +893,6 @@ Neural_Network* Neural_Network_import(const char* filename) {
     target->learning_rate = learning_rate;
 
     target->predict = Neural_Network_predict;
-    target->threaded_predict = Neural_Network_threaded_predict;
     target->train = Neural_Network_train;
     target->batch_train = Neural_Network_batch_train;
     target->save = Neural_Network_save;
@@ -1152,7 +1122,6 @@ Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info,
     }
 
     target->predict = Neural_Network_predict;
-    target->threaded_predict = Neural_Network_threaded_predict;
     target->train = Neural_Network_train;
     target->batch_train = Neural_Network_batch_train;
     target->save = Neural_Network_save;
@@ -1202,7 +1171,6 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self) {
     }
 
     target->predict = Neural_Network_predict;
-    target->threaded_predict = Neural_Network_threaded_predict;
     target->train = Neural_Network_train;
     target->batch_train = Neural_Network_batch_train;
     target->save = Neural_Network_save;
@@ -1215,18 +1183,6 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self) {
     target->delta = NEURAL_NETWORK_OUTPUT_DELTA;
 
     return target;
-}
-
-void Threaded_Inference_Result_clear( Threaded_Inference_Result* target) {
-
-    if (target == NULL) { return; }
-
-    if (target->results == NULL) { free(target); return; }
-
-    target->results->clear(target->results);
-    free(target);
-
-    return;
 }
 
 FloatMatrix* Neural_Network_expand_bias(const FloatMatrix* current_bias, size_t batch_size) {
@@ -1251,33 +1207,4 @@ FloatMatrix* Neural_Network_expand_bias(const FloatMatrix* current_bias, size_t 
     }
 
     return expanded;
-}
-
-Threaded_Inference_Result* Threaded_Inference_Result_init(const Neural_Network* nn, const MNIST_Images* images,
-    size_t image_start_index, size_t num_images) {
-
-    if (nn == NULL || images == NULL) {
-
-        fprintf(stderr, "ERR: <Threaded_Inference_Result_init> Invalid Neural Network or MNIST_Images passed to Threaded_Inference_Result_init\n");
-        exit(EXIT_FAILURE);
-    }
-
-    Threaded_Inference_Result* target = malloc(sizeof(Threaded_Inference_Result));
-
-    if (target == NULL) {
-
-        fprintf(stderr, "ERR: <Threaded_Inference_Result_init> Unable to allocate Threaded_Inference_Result\n");
-        exit(EXIT_FAILURE);
-    }
-
-    target->nn = nn;
-    target->images = images;
-    target->image_start_index = image_start_index;
-    target->num_images = num_images;
-
-    target->results = FloatMatrix_init(MNIST_LABELS, num_images);
-
-    target->clear = Threaded_Inference_Result_clear;
-
-    return target;
 }

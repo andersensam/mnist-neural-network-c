@@ -20,6 +20,8 @@
 
 /* Configure multithreading */
 #define INFERENCE_MAX_THREADS 4
+#define TRAINING_MAX_THREADS 4
+#define THREAD_EPOCHS_BEFORE_COMBINE 1
 
 /* Show epochs when 1, does not when 0 */
 #define SHOW_EPOCH 1
@@ -37,6 +39,7 @@
 #include "utils.h"
 #include "MNIST_Labels.h"
 #include "MNIST_Images.h"
+#include "Neural_Network_Threading.h"
 
 /* Definitions */
 
@@ -68,6 +71,21 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
  * @param model_path Path to save the model once it has been trained
  */
 void train_new_model_batched(const char* labels_path, const char* images_path, size_t num_layers, const size_t* nn_config,
+    float learning_rate, bool generate_biases, size_t num_training_images, size_t batch_size, size_t epochs, const char* model_path);
+
+/**
+ * Function to train a new model from scratch using batching, saving it to a file when complete. Uses threading
+ * @param labels_path Path to the labels for the data
+ * @param images_path Path to the images
+ * @param num_layers Number of layers to create in the network
+ * @param nn_config An array of size_t containing the number of neurons in each layer
+ * @param learning_rate Hyperparameter learning rate
+ * @param num_training_images Number of training images to train on
+ * @param batch_size Batch size to use, does not have to divide evenly over dataset
+ * @param epochs Number of epochs to run
+ * @param model_path Path to save the model once it has been trained
+ */
+void train_new_model_batched_threaded(const char* labels_path, const char* images_path, size_t num_layers, const size_t* nn_config,
     float learning_rate, bool generate_biases, size_t num_training_images, size_t batch_size, size_t epochs, const char* model_path);
 
 /**
