@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Matrix Library in C
  * @author : Samuel Andersen
- * @version: 2024-10-12
+ * @version: 2024-10-15
  *
  * Note: see upstream for Matrix @ https://github.com/andersensam/Matrix
  * 
@@ -318,18 +318,34 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(flatten)(const MATRIX_TYPE_NAME *target, Vector_
 
     MATRIX_TYPE_NAME *result = MATRIX_METHOD(copy)(target);
 
+    MATRIX_METHOD(flatten_o)(result, orientation);
+
+    return result;
+}
+
+/**
+ * Flatten a Matrix to either one row or column, depending on desired orientation
+ * @param target The Matrix we want to flatten
+ * @param orientation Either ROW or COLUMN
+ */
+void MATRIX_METHOD(flatten_o)(MATRIX_TYPE_NAME *target, Vector_Orientation orientation) {
+
+    if (!MATRIX_METHOD(exists)(target, 0, 0)) {
+
+        fprintf(stderr, "ERR: <flatten_o> Invalid Matrix provided to flatten_o\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (orientation == ROW) {
 
-        result->num_rows = 1;
-        result->num_cols = target->num_rows * target->num_cols;
+        target->num_cols = target->num_rows * target->num_cols;
+        target->num_rows = 1;
     }
     else {
 
-        result->num_cols = 1;
-        result->num_rows = target->num_rows * target->num_cols;
+        target->num_rows = target->num_rows * target->num_cols;
+        target->num_cols = 1;
     }
-
-    return result;
 }
 
 /**
@@ -889,6 +905,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(init)(size_t desired_rows, size_t desired_cols) 
     target->max = MATRIX_METHOD(max);
     target->min = MATRIX_METHOD(min);
     target->flatten = MATRIX_METHOD(flatten);
+    target->flatten_o = MATRIX_METHOD(flatten_o);
     target->transpose = MATRIX_METHOD(transpose);
     target->add = MATRIX_METHOD(add);
     target->add_o = MATRIX_METHOD(add_o);

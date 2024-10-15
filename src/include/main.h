@@ -6,9 +6,9 @@
  *    \:.\ \  \ \\. \`-\  \ \\:\/.:| |\:\____/\\ \ `\ \ \ /____\:\\:\____/\\. \`-\  \ \ /____\:\\:.\ \  \ \\. \  \  \ \
  *     \__\/\__\/ \__\/ \__\/ \____/_/ \_____\/ \_\/ \_\/ \_____\/ \_____\/ \__\/ \__\/ \_____\/ \__\/\__\/ \__\/ \__\/    
  *                                                                                                               
- * Project: Basic Neural Network in C
+ * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-12
+ * @version: 2024-10-15
  *
  * General Notes:
  *
@@ -22,7 +22,7 @@
 #define INFERENCE_MAX_THREADS 4
 
 /* Show epochs when 1, does not when 0 */
-#define SHOW_EPOCH 0
+#define SHOW_EPOCH 1
 
 /* Standard dependencies */
 #include <stdio.h>

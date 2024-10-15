@@ -6,9 +6,9 @@
  *    \:.\ \  \ \\. \`-\  \ \\:\/.:| |\:\____/\\ \ `\ \ \ /____\:\\:\____/\\. \`-\  \ \ /____\:\\:.\ \  \ \\. \  \  \ \
  *     \__\/\__\/ \__\/ \__\/ \____/_/ \_____\/ \_\/ \_\/ \_____\/ \_____\/ \__\/ \__\/ \_____\/ \__\/\__\/ \__\/ \__\/    
  *                                                                                                               
- * Project: Basic Neural Network in C
+ * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-12
+ * @version: 2024-10-15
  *
  * General Notes:
  *
@@ -184,11 +184,10 @@ FloatMatrix* Neural_Network_predict(const Neural_Network* self, const PixelMatri
     }
 
     // Create a FloatMatrix to store the PixelMatrix data
-    FloatMatrix* converted_image = Neural_Network_convert_PixelMatrix(image);
+    FloatMatrix* flat_image = Neural_Network_convert_PixelMatrix(image);
 
     // Flatten the FloatMatrix containing the image data, converting to a column vector
-    FloatMatrix* flat_image = converted_image->flatten(converted_image, COLUMN);
-    converted_image->clear(converted_image);
+    flat_image->flatten_o(flat_image, COLUMN);
 
     // Define some variables we're going to use again and again in loops
     FloatMatrix* layer_input = NULL;
@@ -242,7 +241,7 @@ void* Neural_Network_threaded_predict(void* thread_void) {
 
     if (thread_void == NULL) {
 
-        fprintf(stderr, "ERR: <Neural_Network_threaded_predict> Threaded_Inference_Results provided to batch_predict\n");
+        fprintf(stderr, "ERR: <Neural_Network_threaded_predict> Invalid Threaded_Inference_Results provided to batch_predict\n");
         exit(EXIT_FAILURE);
     }
 
@@ -427,9 +426,8 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
     }
 
     /* Do inference and store all the layer outputs in the respective layers */
-    FloatMatrix* converted_image = Neural_Network_convert_PixelMatrix(image);
-    FloatMatrix* flat_image = converted_image->flatten(converted_image, COLUMN);
-    converted_image->clear(converted_image);
+    FloatMatrix* flat_image = Neural_Network_convert_PixelMatrix(image);
+    flat_image->flatten_o(flat_image, COLUMN);
 
     Neural_Network_training_predict(self, flat_image);
     flat_image->clear(flat_image);
@@ -441,7 +439,6 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
 
     FloatMatrix* transpose = NULL;
     FloatMatrix* derivative = NULL;
-    FloatMatrix* multiplied = NULL;
 
     for (size_t i = self->num_layers - 1; i >= 1; --i) {
 
@@ -449,7 +446,7 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
         if (i == self->num_layers - 1) {
 
             // Calculate the error between the proper label and the predicted output
-            self->layers[i]->errors = self->delta(output, self->layers[self->num_layers - 1]->outputs);
+            self->layers[i]->errors = self->delta(output, self->layers[i]->outputs);
         }
         else {
 
@@ -464,13 +461,13 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
         derivative = self->cost_derivative(self->layers[i]->outputs);
 
         // Multiply the errors by the sigmoid prime
-        multiplied = self->layers[i]->errors->multiply(self->layers[i]->errors, derivative);
+        derivative->multiply_o(derivative, self->layers[i]->errors);
 
         // Transpose the previous layer's output
         transpose = self->layers[i - 1]->outputs->transpose(self->layers[i - 1]->outputs);
 
         // Dot product 
-        self->layers[i]->new_weights = multiplied->dot(multiplied, transpose);
+        self->layers[i]->new_weights = derivative->dot(derivative, transpose);
 
         // Scale
         self->layers[i]->new_weights->scale_o(self->layers[i]->new_weights, self->learning_rate);
@@ -481,7 +478,6 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
         // Clean up
         derivative->clear(derivative);
         transpose->clear(transpose);
-        multiplied->clear(multiplied);
     }
 
     // Clean up and move the weights
@@ -526,7 +522,6 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
 
     // Define variables we're going to use throughout the loops
     FloatMatrix* inputs = NULL;
-    FloatMatrix* converted_image = NULL;
     FloatMatrix* flat_image = NULL;
     FloatMatrix* expanded_bias = NULL;
     FloatMatrix* derivative = NULL;
@@ -548,6 +543,9 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
     size_t final_batch_size = num_train - (target_batch_size * num_batches);
     size_t current_index = 0;
 
+    // Create the shuffled index array
+    size_t* shuffled = create_index_array(num_train);
+
     // Iterate over the number of batches, ensuring we catch the last (potentially smaller) batch
     for (size_t i = 0; i <= num_batches; ++i) {
 
@@ -568,11 +566,8 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
         // Insert the image data into the larger input Matrix
         for (size_t j = 0; j < batch_size; ++j) {
 
-            converted_image = Neural_Network_convert_PixelMatrix(images->get(images, current_index + j));
-            flat_image = converted_image->flatten(converted_image, COLUMN);
-
-            converted_image->clear(converted_image);
-            converted_image = NULL;
+            flat_image = Neural_Network_convert_PixelMatrix(images->get(images, shuffled[current_index + j]));
+            flat_image->flatten_o(flat_image, COLUMN);
 
             for (size_t k = 0; k < flat_image->num_rows; ++k) {
 
@@ -583,7 +578,7 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
             flat_image = NULL;
 
             // Set the correct output as 1.0 in the output Matrix
-            outputs->set(outputs, labels->get(labels, current_index + j), j, 1);
+            outputs->set(outputs, labels->get(labels, shuffled[current_index + j]), j, 1);
         }
 
         // Update the bias vectors to be Matrix, ignoring the first layer of course
@@ -604,7 +599,7 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
             if (j == self->num_layers - 1) {
 
                 // Calculate the error between the proper labels and the predicted outputs
-                self->layers[j]->errors = self->delta(outputs, self->layers[self->num_layers - 1]->outputs);
+                self->layers[j]->errors = self->delta(outputs, self->layers[j]->outputs);
 
             }
             else {
@@ -694,6 +689,7 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
 
     free(nabla_w);
     free(nabla_b);
+    free(shuffled);
 }
 
 void Neural_Network_save(const Neural_Network* self, bool include_biases, const char* filename) {

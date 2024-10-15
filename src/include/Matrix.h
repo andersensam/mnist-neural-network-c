@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Matrix Library in C
  * @author : Samuel Andersen
- * @version: 2024-10-09
+ * @version: 2024-10-15
  *
  */
 
@@ -126,6 +126,13 @@ typedef struct MATRIX_TYPE_NAME {
      * @returns Returns an array of pointers of type MATRIX_TYPE
      */
     struct MATRIX_TYPE_NAME *(*flatten)(const struct MATRIX_TYPE_NAME *target, Vector_Orientation orientation);
+
+    /**
+     * Flatten a Matrix to an array of pointers to each data element
+     * @param target The Matrix we want to flatten
+     * @param orientation Either ROW or COLUMN
+     */
+    void (*flatten_o)(struct MATRIX_TYPE_NAME *target, Vector_Orientation orientation);
 
     /**
      * Transpose a Matrix
@@ -354,6 +361,13 @@ MATRIX_TYPE MATRIX_METHOD(min)(const MATRIX_TYPE_NAME *target);
  * @returns Returns a vector with either one row / column containing the data
  */
 MATRIX_TYPE_NAME *MATRIX_METHOD(flatten)(const MATRIX_TYPE_NAME *target, Vector_Orientation orientation);
+
+/**
+ * Flatten a Matrix to either one row or column, depending on desired orientation
+ * @param target The Matrix we want to flatten
+ * @param orientation Either ROW or COLUMN
+ */
+void MATRIX_METHOD(flatten_o)(MATRIX_TYPE_NAME *target, Vector_Orientation orientation);
 
 /**
  * Transpose a Matrix

@@ -1,6 +1,6 @@
 # MNIST Neural Network in C
 
-This projects aims to create a basic, flexible neural network implementation in C, that predicts the numbers depicted in handwritten images in the MNIST dataset.
+This projects aims to create a flexible neural network implementation in C, that predicts the numbers depicted in handwritten images in the MNIST dataset.
 
 There are a number of inspirations for this project, including:
 
@@ -14,7 +14,7 @@ CyberZHG's [repo on layer normalization](https://github.com/CyberZHG/torch-layer
 
 ## Approach to this Neural Network
 
-This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including a lack of multithreaded training and GPU utilization.
+This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including a lack of multithreaded training or GPU utilization.
 
 I hope to update this repo as time goes on with adjustments to the error, activation, and training methods.
 
