@@ -14,7 +14,7 @@ CyberZHG's [repo on layer normalization](https://github.com/CyberZHG/torch-layer
 
 ## Approach to this Neural Network
 
-This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including a lack of multithreaded training or GPU utilization.
+This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including a lack of GPU utilization.
 
 I hope to update this repo as time goes on with adjustments to the error, activation, and training methods.
 
@@ -103,6 +103,7 @@ We import the existing model and its metadata, then train on 20000 images by thr
 
 ```
 $ ./target/main update-online data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 3 test.model updated.model
+
 [2024-10-12 12:20:03]: Starting to load MNIST labels
 [2024-10-12 12:20:03]: Finished loading MNIST labels
 [2024-10-12 12:20:03]: Starting to load MNIST images
@@ -120,7 +121,7 @@ $ ./target/main update-online data/train-labels-idx1-ubyte data/train-images-idx
 Using (mini)batch, we can train the Neural Network with the following syntax:
 
 ```
-./target/main train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
+./target/main batch-train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
 ```
 
 A complete example is listed below:
@@ -165,6 +166,7 @@ We import the existing model and its metadata, then train on 20000 images by thr
 
 ```
 $ ./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 8 3 test.model updated.model
+
 [2024-10-12 12:20:55]: Starting to load MNIST labels
 [2024-10-12 12:20:55]: Finished loading MNIST labels
 [2024-10-12 12:20:55]: Starting to load MNIST images
@@ -176,6 +178,49 @@ $ ./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3
 ```
 
 *Note: retraining an existing model preserves the original learning rate*
+
+#### Threaded (Mini)batch Training
+
+(Mini)batch training can be sped up by using threading, with the following syntax:
+
+```
+./target/main threaded-batch <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
+```
+
+An example is:
+```
+./exe/main batch-train data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 true 3 784 100 47 10000 4 16 test.model
+```
+
+Here we train on 10000 images with a batch size of 4, iterating over 16 total epochs. Note that **important** tunables are available in `main.h` that control threading. For threaded training, we are particularly concerned with `TRAINING_MAX_THREADS` and `THREAD_EPOCHS_BEFORE_COMBINE`. While the maximum threads is fairly self explanatory, `THREAD_EPOCHS_BEFORE_COMBINE` requires a bit of explanation -- this value controls how many epochs are scheduled per thread before the weights and biases are averaged across the network.
+
+If we have:
+```
+#define TRAINING_MAX_THREADS 2
+#define THREAD_EPOCHS_BEFORE_COMBINE 2
+```
+
+We expect that for each of the two threads, we will run through two whole epochs before averaging the weights and biases. This forces us value of `epochs` passed to the command line to be **>= `TRAINING_MAX_THREADS` * `THREAD_EPOCHS_BEFORE_COMBINE`**. In our example, the minimum number of epochs is 4.
+
+Keep in mind that `epochs` on the command line refers to the **total** number of epochs scheduled across all threads, so in our example with 16, we will average out the weights and biases a total of 4 times (16 / (2 * 2)).
+
+With our test command above, we receive the following output:
+```
+$ ./exe/main batch-train data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 true 3 784 100 47 10000 4 16 test.model
+
+[2024-10-15 22:22:15]: Starting to load MNIST labels
+[2024-10-15 22:22:15]: Finished loading MNIST labels
+[2024-10-15 22:22:15]: Starting to load MNIST images
+[2024-10-15 22:22:17]: Finished loading MNIST images
+[2024-10-15 22:22:17]: Starting threaded batch model training
+[2024-10-15 22:22:17]: INFO: Starting threaded batch training epochs 1 - 4
+[2024-10-15 22:22:17]: INFO: Starting threaded batch training epochs 5 - 8
+[2024-10-15 22:22:17]: INFO: Starting threaded batch training epochs 9 - 12
+[2024-10-15 22:22:18]: INFO: Starting threaded batch training epochs 13 - 16
+[2024-10-15 22:22:18]: Finished threaded batch model training
+[2024-10-15 22:22:18]: Saving model
+[2024-10-15 22:22:18]: Finished saving model
+```
 
 ### Running Inference
 
@@ -271,6 +316,10 @@ Read in the label dataset and wrap it in a container.
 ### *Neural_Network.c*
 
 The Neural Network itself and associated helper functions / data structures, like the Neural Network Layer structure.
+
+### *Neural_Network_Threading.c*
+
+Threading add-ons for the Neural Network. Handles data wrapping for `pthread` and execution of training.
 
 ### *utils.c*
 

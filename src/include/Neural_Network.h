@@ -75,6 +75,7 @@
 typedef struct Neural_Network_Layer {
 
     /* Data elements */
+    
     size_t num_neurons;
     FloatMatrix* weights;
     FloatMatrix* biases;
@@ -137,27 +138,10 @@ Neural_Network_Layer* Neural_Network_Layer_copy(const Neural_Network_Layer* self
  */
 void Neural_Network_Layer_clear(Neural_Network_Layer* target);
 
-typedef struct Threaded_Inference_Result {
-
-    /* Data elements */
-    const struct Neural_Network* nn;
-    const MNIST_Images* images;
-    size_t image_start_index;
-    size_t num_images;
-    FloatMatrix* results;
-
-    /* Methods */
-
-    /**
-     * Cleans up Threaded Inference Result
-     */
-    void (*clear)(struct Threaded_Inference_Result* target);
-
-} Threaded_Inference_Result;
-
 typedef struct Neural_Network {
 
     /* Data elements */
+
     size_t num_layers;
     Neural_Network_Layer** layers;
     float learning_rate;
@@ -171,12 +155,6 @@ typedef struct Neural_Network {
      * @returns Returns a FloatMatrix containing probabilities for the output
      */
     FloatMatrix* (*predict)(const struct Neural_Network* self, const PixelMatrix* image);
-
-    /**
-     * Run inference on a batch of images. This is set up for threading
-     * @param thread_void A void pointer-cast Threaded_Inference_Results instance containing all the info for executing batch inference
-     */
-    void* (*threaded_predict)(void* thread_void);
 
     /**
      * Execute the training of the Neural Network
@@ -264,12 +242,6 @@ void Neural_Network_clear(Neural_Network* target);
  * @returns Returns a FloatMatrix containing probabilities for the output
  */
 FloatMatrix* Neural_Network_predict(const Neural_Network* self, const PixelMatrix* image);
-
-/**
- * Run inference on a batch of images. This is set up for threading
- * @param thread_void A void pointer-cast Threaded_Inference_Results instance containing all the info for executing batch inference
- */
-void* Neural_Network_threaded_predict(void* thread_void);
 
 /**
  * Calculate the sigmoid of a given float
@@ -366,22 +338,6 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self);
  * @param batch_size The size of the batch, i.e. the number of copies of the vector we want in the Matrix
  */
 FloatMatrix* Neural_Network_expand_bias(const FloatMatrix* current_bias, size_t batch_size);
-
-/**
- * Cleans up Threaded Inference Result
- */
-void Threaded_Inference_Result_clear( Threaded_Inference_Result* target);
-
-/**
- * Allocate a Threaded Inference Result and set the basic info
- * @param nn Neural Network to run inference on
- * @param images Pointer to MNIST_Images
- * @param image_start_index Start index of the images to be processed
- * @param num_images Number of images processed by this thread
- * @returns Returns a Threaded Inference Result and sets up the FloatMatrix inside
- */
-Threaded_Inference_Result* Threaded_Inference_Result_init(const Neural_Network* nn, const MNIST_Images* images,
-    size_t image_start_index, size_t num_images);
 
 #endif
 
