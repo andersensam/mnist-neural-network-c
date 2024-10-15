@@ -189,7 +189,7 @@ $ ./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3
 
 An example is:
 ```
-./exe/main batch-train data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 true 3 784 100 47 10000 4 16 test.model
+./exe/main threaded-batch data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 true 3 784 100 47 10000 4 16 test.model
 ```
 
 Here we train on 10000 images with a batch size of 4, iterating over 16 total epochs. Note that **important** tunables are available in `main.h` that control threading. For threaded training, we are particularly concerned with `TRAINING_MAX_THREADS` and `THREAD_EPOCHS_BEFORE_COMBINE`. While the maximum threads is fairly self explanatory, `THREAD_EPOCHS_BEFORE_COMBINE` requires a bit of explanation -- this value controls how many epochs are scheduled per thread before the weights and biases are averaged across the network.
@@ -206,7 +206,7 @@ Keep in mind that `epochs` on the command line refers to the **total** number of
 
 With our test command above, we receive the following output:
 ```
-$ ./exe/main batch-train data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 true 3 784 100 47 10000 4 16 test.model
+$ ./exe/main threaded-batch data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 true 3 784 100 47 10000 4 16 test.model
 
 [2024-10-15 22:22:15]: Starting to load MNIST labels
 [2024-10-15 22:22:15]: Finished loading MNIST labels
