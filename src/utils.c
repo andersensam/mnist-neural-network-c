@@ -6,9 +6,9 @@
  *    \:.\ \  \ \\. \`-\  \ \\:\/.:| |\:\____/\\ \ `\ \ \ /____\:\\:\____/\\. \`-\  \ \ /____\:\\:.\ \  \ \\. \  \  \ \
  *     \__\/\__\/ \__\/ \__\/ \____/_/ \_____\/ \_\/ \_\/ \_____\/ \_____\/ \__\/ \__\/ \_____\/ \__\/\__\/ \__\/ \__\/    
  *                                                                                                               
- * Project: Basic Neural Network in C
+ * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-04
+ * @version: 2024-10-15
  *
  * General Notes:
  *
@@ -46,4 +46,47 @@ void log_message(const char* message) {
 
     // Print out the message with the time
     printf("%s%s\n", buffer, message);
+}
+
+void shuffle(size_t* index, size_t elements) {
+
+    if (index == NULL) {
+
+        fprintf(stderr, "ERR: <shuffle> Invalid index array provided to shuffle\n");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t random_index = 0;
+    size_t current_value = 0;
+
+    for (size_t i = elements - 1; i > 0; --i) {
+
+        random_index = rand() % (i + 1);
+
+        // Grab the current value and swap with the value @ random_index
+        current_value = index[i];
+        index[i] = index[random_index];
+        index[random_index] = current_value;
+    }
+}
+
+size_t* create_index_array(size_t elements) {
+
+    size_t* target = calloc(elements, sizeof(size_t));
+
+    if (target == NULL) {
+
+        fprintf(stderr, "ERR: <create_index_array> Unable to allocate memory for shuffled index array\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (size_t i = 0; i < elements; ++i) {
+
+        target[i] = i;
+    }
+
+    // Shuffle the index array
+    shuffle(target, elements);
+
+    return target;
 }

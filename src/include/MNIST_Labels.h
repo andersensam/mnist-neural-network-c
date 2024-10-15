@@ -6,9 +6,9 @@
  *    \:.\ \  \ \\. \`-\  \ \\:\/.:| |\:\____/\\ \ `\ \ \ /____\:\\:\____/\\. \`-\  \ \ /____\:\\:.\ \  \ \\. \  \  \ \
  *     \__\/\__\/ \__\/ \__\/ \____/_/ \_____\/ \_\/ \_\/ \_____\/ \_____\/ \__\/ \__\/ \_____\/ \__\/\__\/ \__\/ \__\/    
  *                                                                                                               
- * Project: Basic Neural Network in C
+ * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-08
+ * @version: 2024-10-15
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *

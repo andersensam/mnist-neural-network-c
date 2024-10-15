@@ -6,9 +6,9 @@
  *    \:.\ \  \ \\. \`-\  \ \\:\/.:| |\:\____/\\ \ `\ \ \ /____\:\\:\____/\\. \`-\  \ \ /____\:\\:.\ \  \ \\. \  \  \ \
  *     \__\/\__\/ \__\/ \__\/ \____/_/ \_____\/ \_\/ \_\/ \_____\/ \_____\/ \__\/ \__\/ \_____\/ \__\/\__\/ \__\/ \__\/    
  *                                                                                                               
- * Project: Basic Neural Network in C
+ * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-04
+ * @version: 2024-10-15
  *
  * General Notes:
  *
@@ -47,5 +47,20 @@ float random_float(void);
  * @param message Message to display on the console
  */
 void log_message(const char* message);
+
+/**
+ * Shuffle the indicies used for pulling images and labels
+ * See Fisher-Yates Shuffle: https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+ * @param index Array of size_t to shuffle
+ * @param elements Number of elements in the index array
+ */
+void shuffle(size_t* index, size_t elements);
+
+/**
+ * Generate an array of size_t that are randomly shuffled
+ * @param elements
+ * @returns Returns an array of size_t
+ */
+size_t* create_index_array(size_t elements);
 
 #endif

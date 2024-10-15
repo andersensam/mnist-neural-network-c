@@ -6,9 +6,9 @@
  *    \:.\ \  \ \\. \`-\  \ \\:\/.:| |\:\____/\\ \ `\ \ \ /____\:\\:\____/\\. \`-\  \ \ /____\:\\:.\ \  \ \\. \  \  \ \
  *     \__\/\__\/ \__\/ \__\/ \____/_/ \_____\/ \_\/ \_\/ \_____\/ \_____\/ \__\/ \__\/ \_____\/ \__\/\__\/ \__\/ \__\/    
  *                                                                                                               
- * Project: Basic Neural Network in C
+ * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-12
+ * @version: 2024-10-15
  *
  * General Notes:
  *
@@ -47,6 +47,17 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
         exit(EXIT_FAILURE);
     }
 
+    if (nn_config[num_layers - 1] != MNIST_LABELS) {
+
+        fprintf(stderr, "ERR: <train_new_model> Output layer does not match number of labels. Got %zu and expected %d\n",
+            nn_config[num_layers - 1], MNIST_LABELS);
+
+        images->clear(images);
+        labels->clear(labels);
+
+        exit(EXIT_FAILURE);
+    }
+
     // Initalize the Neural Network
     Neural_Network* nn = Neural_Network_init(num_layers, nn_config, learning_rate, generate_biases);
 
@@ -54,8 +65,8 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
     PixelMatrix* current_image = NULL;
     uint8_t current_label = 0;
 
-    // Define where to start in the training dataset and how many samples to train on
-    size_t training_start_idx = 0;
+    // Create the shuffled index array
+    size_t* shuffled = create_index_array(num_training_images);
 
     // Use a buffer for snprintf
     char buffer[100];
@@ -73,14 +84,17 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
         }
 
         // Set i to the range of images + labels we want to train on
-        for (size_t j = training_start_idx; j < training_start_idx + num_training_images; ++j) {
+        for (size_t j = 0; j < num_training_images; ++j) {
 
-            current_image = images->get(images, j);
-            current_label = labels->get(labels, j);
+            current_image = images->get(images, shuffled[j]);
+            current_label = labels->get(labels, shuffled[j]);
 
             // Execute the training on the current image + label
             nn->train(nn, current_image, current_label);
         }
+
+        // Shuffle the index array again at the end of each epoch
+        shuffle(shuffled, num_training_images);
     }
 
     log_message("Finished model online training");
@@ -92,6 +106,8 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
     labels->clear(labels);
     images->clear(images);
     nn->clear(nn);
+
+    free(shuffled);
 
     return;
 }
@@ -120,6 +136,27 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
     if (labels->num_labels != images->num_images) {
 
         fprintf(stderr, "ERR: <train_new_model_batched> Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        images->clear(images);
+        labels->clear(labels);
+
+        exit(EXIT_FAILURE);
+    }
+
+    if (nn_config[num_layers - 1] != MNIST_LABELS) {
+
+        fprintf(stderr, "ERR: <train_new_model> Output layer does not match number of labels. Got %zu and expected %d\n",
+            nn_config[num_layers - 1], MNIST_LABELS);
+
+        images->clear(images);
+        labels->clear(labels);
+        
+        exit(EXIT_FAILURE);
+    }
+
+    if (batch_size > num_training_images) {
+
+        fprintf(stderr, "ERR: <train_new_model_batched> Batch size cannot exceed the number of training images\n");
+
         images->clear(images);
         labels->clear(labels);
 
@@ -196,8 +233,8 @@ void train_existing_model(const char* labels_path, const char* images_path, size
     PixelMatrix* current_image = NULL;
     uint8_t current_label = 0;
 
-    // Define where to start in the training dataset and how many samples to train on
-    size_t training_start_idx = 0;
+    // Create the shuffled index array
+    size_t* shuffled = create_index_array(num_training_images);
 
     // Use a buffer for snprintf
     char buffer[100];
@@ -215,14 +252,16 @@ void train_existing_model(const char* labels_path, const char* images_path, size
         }
 
         // Set i to the range of images + labels we want to train on
-        for (size_t j = training_start_idx; j < training_start_idx + num_training_images; ++j) {
+        for (size_t j = 0; j < num_training_images; ++j) {
 
-            current_image = images->get(images, j);
-            current_label = labels->get(labels, j);
+            current_image = images->get(images, shuffled[j]);
+            current_label = labels->get(labels, shuffled[j]);
 
             // Execute the training on the current image + label
             nn->train(nn, current_image, current_label);
         }
+
+        shuffle(shuffled, num_training_images);
     }
 
     log_message("Finished model online training for existing model");
@@ -234,6 +273,8 @@ void train_existing_model(const char* labels_path, const char* images_path, size
     labels->clear(labels);
     images->clear(images);
     nn->clear(nn);
+
+    free(shuffled);
 
     return;
 }
@@ -262,6 +303,16 @@ void train_existing_model_batched(const char* labels_path, const char* images_pa
     if (labels->num_labels != images->num_images) {
 
         fprintf(stderr, "ERR: <train_existing_model_batched> Number of labels and images must match. Num labels: %u. Num images: %u\n", labels->num_labels, images->num_images);
+        images->clear(images);
+        labels->clear(labels);
+
+        exit(EXIT_FAILURE);
+    }
+
+    if (batch_size > num_training_images) {
+
+        fprintf(stderr, "ERR: <train_existing_model_batched> Batch size cannot exceed the number of training images\n");
+
         images->clear(images);
         labels->clear(labels);
 
@@ -483,6 +534,8 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
 int main(int argc, char* argv[]) {
 
+    printf("%i\n", argc);
+
     if (argc <= 1) {
 
         fprintf(stderr, "ERR: <main> Too few arguments provided. Use main help to get a help menu. Exiting\n");
@@ -499,9 +552,9 @@ int main(int argc, char* argv[]) {
          * num_layers (6), [layer_info] (7..n-4), num_images (n-3), epochs (n-2), model_name (n-1)
          */
 
-        if (argc <= (9 + atoi(argv[6]))) {
+        if (argc != (10 + atoi(argv[6]))) {
 
-            fprintf(stderr, "ERR: <main> Too few arguments provided to train\n");
+            fprintf(stderr, "ERR: <main> Invalid arguments provided to train\n");
             return 1;
         }
 
@@ -535,9 +588,9 @@ int main(int argc, char* argv[]) {
          * updated_model_path (7)
          */
 
-        if (argc < 7) {
+        if (argc != 8) {
 
-            fprintf(stderr, "ERR: <main> Too few arguments provided to update-online\n");
+            fprintf(stderr, "ERR: <main> Invalid arguments provided to update-online\n");
             return 1;
         }
 
@@ -552,9 +605,9 @@ int main(int argc, char* argv[]) {
          * existing_model_path (7), updated_model_path (8)
          */
 
-        if (argc < 8) {
+        if (argc != 9) {
 
-            fprintf(stderr, "ERR: <main> Too few arguments provided to update-batch\n");
+            fprintf(stderr, "ERR: <main> Invalid arguments provided to update-batch\n");
             return 1;
         }
 
@@ -570,9 +623,9 @@ int main(int argc, char* argv[]) {
          * num_layers (6), [layer_info] (7..n-5), num_images (n-4), batch_size (n-3), epochs (n-2), model_name (n - 1)
          */
 
-        if (argc <= (10 + atoi(argv[6]))) {
+        if (argc != (11 + atoi(argv[6]))) {
 
-            fprintf(stderr, "ERR: <main> Too few arguments provided to batch-train\n");
+            fprintf(stderr, "ERR: <main> Invalid arguments provided to batch-train\n");
             return 1;
         }
 
@@ -601,9 +654,9 @@ int main(int argc, char* argv[]) {
     }
     else if (strncmp(argv[1], "predict", 7) == 0) {
 
-        if (argc < 6) {
+        if (argc != 6) {
 
-            fprintf(stderr, "ERR: <main> Too few arguments provided to predict\n");
+            fprintf(stderr, "ERR: <main> Invalid arguments provided to predict\n");
             return 1;
         }
 
@@ -613,9 +666,9 @@ int main(int argc, char* argv[]) {
     }
     else if (strncmp(argv[1], "threaded-predict", 16) == 0) {
 
-        if (argc < 6) {
+        if (argc != 6) {
 
-            fprintf(stderr, "ERR: <main> Too few arguments provided to use threaded-predict\n");
+            fprintf(stderr, "ERR: <main> Invalid arguments provided to use threaded-predict\n");
             return 1;
         }
 
