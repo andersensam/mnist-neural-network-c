@@ -10,11 +10,11 @@ CD = cd
 
 all:
 	$(MKDIR_P) target
-	$(CD) src && $(CC) $(CFLAGS) $(OPTIMIZATIONS) utils.c Neural_Network.c Neural_Network_Threading.c MNIST_Labels.c MNIST_Images.c main.c -o ../target/main $(LDFLAGS)
+	$(CD) src && $(CC) $(CFLAGS) $(OPTIMIZATIONS) utils.c Neural_Network.c Neural_Network_Threading.c MNIST_Labels.c MNIST_Images.c inference.c training.c main.c -o ../target/main $(LDFLAGS)
 
 debug:
 	$(MKDIR_P) target
-	$(CD) src && $(CC) $(CFLAGS) $(DEBUG) utils.c Neural_Network.c Neural_Network_Threading.c MNIST_Labels.c MNIST_Images.c main.c -o ../target/main_debug $(LDFLAGS)
+	$(CD) src && $(CC) $(CFLAGS) $(DEBUG) utils.c Neural_Network.c Neural_Network_Threading.c MNIST_Labels.c MNIST_Images.c inference.c training.c main.c -o ../target/main_debug $(LDFLAGS)
 
 clean:
 	$(RM_RF) target/

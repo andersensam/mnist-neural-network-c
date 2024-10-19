@@ -35,6 +35,11 @@ float random_float(void) {
     return (float) (2 * (rand() / (float)(RAND_MAX))) - 1.0;
 }
 
+float random_weight_float(size_t prev_layer_neurons) {
+
+    return (float) ((2 * (rand() / (float)(RAND_MAX))) - 1.0) / sqrtf((float)prev_layer_neurons);
+}
+
 void log_message(const char* message) {
 
     // Setup a buffer and get the current time

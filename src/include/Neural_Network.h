@@ -22,7 +22,7 @@
 
 /* Cost Function and Derivative Definition */
 #define NEURAL_NETWORK_ACTIVATION Neural_Network_sigmoid
-#define NEURAL_NETWORK_COST_DERIVATIVE Neural_Network_sigmoid_prime
+#define NEURAL_NETWORK_COST_DERIVATIVE Neural_Network_cross_entropy
 #define NEURAL_NETWORK_OUTPUT_DELTA Neural_Network_sigmoid_delta
 
 /* Markers to help with loading / saving Neural Networks */
@@ -39,6 +39,7 @@
  * 
  * uint32_t NN_HEADER_MAGIC
  * float learning_rate (generally 0.1)
+ * float lambda
  * uint32_t includes_biases (0 or 1)
  * size_t number_of_layers
  * size_t[number_of_layers] number_of_neurons
@@ -145,6 +146,7 @@ typedef struct Neural_Network {
     size_t num_layers;
     Neural_Network_Layer** layers;
     float learning_rate;
+    float lambda;
 
     /* Methods */
 
@@ -200,8 +202,9 @@ typedef struct Neural_Network {
     /**
      * The derivative of the cost function to apply
      * @param target A FloatMatrix to apply calculate the derivative of
+     * @param is_final_layer Boolean handling special considerations for final layer
      */
-    FloatMatrix* (*cost_derivative)(const FloatMatrix* target);
+    FloatMatrix* (*cost_derivative)(const FloatMatrix* target, bool is_final_layer);
 
     /**
      * Delta placeholder function
@@ -225,9 +228,10 @@ typedef struct Neural_Network {
  * @param layer_info Pointer to an array of size_t containing the sizes of each layer
  * @param learning_rate Float 0 - 1 of the learning rate to use
  * @param generate_biases Generate random biases if true, set to zero if false
+ * @param lambda Hyperparameter for regularization
  * @returns Returns a pointer to a Neural Network
  */
-Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases);
+Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases, float lambda);
 
 /**
  * Cleans up a Neural Network instance
@@ -253,9 +257,18 @@ float Neural_Network_sigmoid(float z);
 /**
  * Calculate the sigmoid prime of a Matrix
  * @param target The Matrix to calculate the sigmoid prime of -- this should already have sigmoid applied to it
+ * @param is_final_layer Boolean handling special considerations for final layer
  * @returns Returns a new Matrix of sigmoid prime values
  */
-FloatMatrix* Neural_Network_sigmoid_prime(const FloatMatrix* target);
+FloatMatrix* Neural_Network_sigmoid_prime(const FloatMatrix* target, bool is_final_layer);
+
+/**
+ * Calculate the "derivative" for cross-entropy (i.e. return a Matrix of 1)
+ * @param target FloatMatrix to calculate the "derivative" for -- this will not be modified at all
+ * @param is_final_layer Boolean handling special considerations for final layer
+ * @return Returns a Matrix of ones
+ */
+FloatMatrix* Neural_Network_cross_entropy(const FloatMatrix* target, bool is_final_layer);
 
 /**
  * Calculate the error / delta for sigmoid output layers
