@@ -101,8 +101,8 @@ Neural_Network_Layer* Neural_Network_Layer_init(size_t num_neurons, size_t previ
 
         for (size_t j = 0; j < previous_layer_neurons; ++j) {
 
-            // Fill the weights Matrix with random values to start
-            target->weights->set(target->weights, i, j, random_float());
+            // Fill the weights Matrix with random values to start, using smaller weights (compared to `random_float()`)
+            target->weights->set(target->weights, i, j, random_weight_float(previous_layer_neurons));
         }
     }
 
@@ -242,13 +242,16 @@ float Neural_Network_sigmoid(float z) {
     return 1.0f / (1 + exp(-1 * z));
 }
 
-FloatMatrix* Neural_Network_sigmoid_prime(const FloatMatrix* target) {
+FloatMatrix* Neural_Network_sigmoid_prime(const FloatMatrix* target, bool is_final_layer) {
 
     if (target == NULL) {
 
         fprintf(stderr, "ERR: <Neural_Network_sigmoid_prime> Invalid FloatMatrix provided to sigmoid_prime\n");
         exit(EXIT_FAILURE);
     }
+
+    // Suppress warning for not using is_final_layer
+    if (is_final_layer) { is_final_layer = true; }
 
     FloatMatrix* one = FloatMatrix_init(target->num_rows, target->num_cols);
 
@@ -264,6 +267,25 @@ FloatMatrix* Neural_Network_sigmoid_prime(const FloatMatrix* target) {
     return one;
 }
 
+FloatMatrix* Neural_Network_cross_entropy(const FloatMatrix* target, bool is_final_layer) {
+
+    if (target == NULL) {
+
+        fprintf(stderr, "ERR: <Neural_Network_cross_entropy> Invalid FloatMatrix provided to cross_entropy\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Since we still use sigmoid prime for all other layers, simply refer to that method and return
+    if (!is_final_layer) { return Neural_Network_sigmoid_prime(target, true); }
+
+    FloatMatrix* one = FloatMatrix_init(target->num_rows, target->num_cols);
+
+    // Populate the Matrix with 1.0 in each coordinate
+    one->populate(one, 1);
+
+    return one;
+}
+
 FloatMatrix* Neural_Network_sigmoid_delta(const FloatMatrix* actual, const FloatMatrix* output) {
 
     if (actual == NULL || output == NULL) {
@@ -272,7 +294,7 @@ FloatMatrix* Neural_Network_sigmoid_delta(const FloatMatrix* actual, const Float
         exit(EXIT_FAILURE);
     }
 
-    return actual->subtract(actual, output);
+    return output->subtract(output, actual);
 }
 
 FloatMatrix* Neural_Network_softmax(const FloatMatrix* target) {
@@ -418,6 +440,8 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
 
             // Calculate the error between the proper label and the predicted output
             self->layers[i]->errors = self->delta(output, self->layers[i]->outputs);
+            
+            derivative = self->cost_derivative(self->layers[i]->outputs, true);
         }
         else {
 
@@ -426,10 +450,9 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
             self->layers[i]->errors = transpose->dot(transpose, self->layers[i + 1]->errors);
 
             transpose->clear(transpose);
-        }
 
-        // Get the sigmoid prime of the outputs
-        derivative = self->cost_derivative(self->layers[i]->outputs);
+            derivative = self->cost_derivative(self->layers[i]->outputs, false);
+        }        
 
         // Multiply the errors by the sigmoid prime
         derivative->multiply_o(derivative, self->layers[i]->errors);
@@ -443,8 +466,8 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
         // Scale
         self->layers[i]->new_weights->scale_o(self->layers[i]->new_weights, self->learning_rate);
 
-        // Add
-        self->layers[i]->new_weights->add_o(self->layers[i]->new_weights, self->layers[i]->weights);
+        // Subtract
+        self->layers[i]->new_weights->subtract_o(self->layers[i]->new_weights, self->layers[i]->weights);
 
         // Clean up
         derivative->clear(derivative);
@@ -460,7 +483,7 @@ void Neural_Network_train(Neural_Network* self, const PixelMatrix* image, uint8_
 
         // Update the biases too, now that we're done with the errors we can scale by learning rate before cleaning up
         self->layers[i]->errors->scale_o(self->layers[i]->errors, self->learning_rate);
-        self->layers[i]->biases->add_o(self->layers[i]->biases, self->layers[i]->errors);
+        self->layers[i]->biases->subtract_o(self->layers[i]->biases, self->layers[i]->errors);
 
         self->layers[i]->outputs->clear(self->layers[i]->outputs);
         self->layers[i]->outputs = NULL;
@@ -572,6 +595,9 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
                 // Calculate the error between the proper labels and the predicted outputs
                 self->layers[j]->errors = self->delta(outputs, self->layers[j]->outputs);
 
+                // Get the cost derivative, special handling for last layer
+                derivative = self->cost_derivative(self->layers[j]->outputs, true);
+
             }
             else {
 
@@ -580,10 +606,10 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
                 self->layers[j]->errors = transpose->dot(transpose, self->layers[j + 1]->errors);
 
                 transpose->clear(transpose);
-            }
 
-            // Sigmoid prime of the outputs
-            derivative = self->cost_derivative(self->layers[j]->outputs);
+                // Get the cost derivative
+                derivative = self->cost_derivative(self->layers[j]->outputs, false);
+            }
 
             // Multiply the errors with the sigmoid prime
             derivative->multiply_o(derivative, self->layers[j]->errors);
@@ -610,7 +636,9 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
             nabla_b[j]->scale_o(nabla_b[j], self->learning_rate / (float)batch_size);
 
             // Add the processed changes to the original weights
-            self->layers[j]->weights->add_o(self->layers[j]->weights, nabla_w[j]);
+            //self->layers[j]->weights->subtract_o(self->layers[j]->weights, nabla_w[j]);
+            self->layers[j]->weights->scale_o(self->layers[j]->weights, 1.0f - ((self->learning_rate * self->lambda) / (float)num_train));
+            self->layers[j]->weights->subtract_o(self->layers[j]->weights, nabla_w[j]);
 
             // Clean up nabla_w
             nabla_w[j]->clear(nabla_w[j]);
@@ -628,7 +656,7 @@ void Neural_Network_batch_train(Neural_Network* self, const MNIST_Images* images
 
             self->layers[j]->biases->clear(self->layers[j]->biases);
             self->layers[j]->biases = expanded_bias;
-            self->layers[j]->biases->add_o(self->layers[j]->biases, nabla_b[j]);
+            self->layers[j]->biases->subtract_o(self->layers[j]->biases, nabla_b[j]);
 
             expanded_bias = NULL;
 
@@ -689,6 +717,9 @@ void Neural_Network_save(const Neural_Network* self, bool include_biases, const 
 
     // Write the learning rate of the model
     fwrite(&(self->learning_rate), sizeof(float), 1, model);
+
+    // Write the lambda used for the model
+    fwrite(&(self->lambda), sizeof(float), 1, model);
 
     // Determine whether or not biases are to be included
     uint32_t has_biases = include_biases ? 1 : 0;
@@ -812,6 +843,16 @@ Neural_Network* Neural_Network_import(const char* filename) {
         exit(EXIT_FAILURE);
     }
 
+    float lambda = 0;
+
+    if (fread(&lambda, sizeof(float), 1, model) != 1) {
+
+        fprintf(stderr, "ERR: <Neural_Network_import> Unable to read lambda from model\n");
+
+        fclose(model);
+        exit(EXIT_FAILURE);
+    }
+
     // Check to see if biases were included in the model, either 0 for no, or 1 for yes
     uint32_t includes_biases = 0;
 
@@ -891,6 +932,7 @@ Neural_Network* Neural_Network_import(const char* filename) {
     // Much of this should look the same as allocate_Neural_Network
     target->num_layers = num_layers;
     target->learning_rate = learning_rate;
+    target->lambda = lambda;
 
     target->predict = Neural_Network_predict;
     target->train = Neural_Network_train;
@@ -1099,7 +1141,7 @@ Neural_Network* Neural_Network_import(const char* filename) {
     return target;
 }
 
-Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases) {
+Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases, float lambda) {
 
     Neural_Network* target = malloc(sizeof(Neural_Network));
 
@@ -1111,6 +1153,7 @@ Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info,
 
     target->num_layers = num_layers;
     target->learning_rate = learning_rate;
+    target->lambda = lambda;
 
     target->layers = calloc(num_layers, sizeof(Neural_Network_Layer*));
 
@@ -1154,6 +1197,7 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self) {
 
     target->num_layers = self->num_layers;
     target->learning_rate = self->learning_rate;
+    target->lambda = self->lambda;
     
     target->layers = calloc(target->num_layers, sizeof(Neural_Network_Layer*));
 

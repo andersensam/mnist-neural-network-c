@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-15
+ * @version: 2024-10-17
  *
  * General Notes:
  *
@@ -38,9 +38,16 @@ uint32_t map_uint32(uint32_t in);
 
 /**
  * Generate a random float for populating Matrix values
- * @returns A random float between 0 and 1
+ * @returns A random float between -1 and 1
  */
 float random_float(void);
+
+/**
+ * Generate a random float for weights, dividing by the sqrt of the neuron connections
+ * @param prev_layer_neurons Number of neurons in the previous layer
+ * @returns A random float between -1 and 1
+ */
+float random_weight_float(size_t prev_layer_neurons);
 
 /**
  * Log an event to the console with proper date and time

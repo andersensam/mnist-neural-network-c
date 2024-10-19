@@ -121,21 +121,21 @@ $ ./target/main update-online data/train-labels-idx1-ubyte data/train-images-idx
 Using (mini)batch, we can train the Neural Network with the following syntax:
 
 ```
-./target/main batch-train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
+./target/main batch-train <path to labels> <path to images> <learning rate> <lambda> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
 ```
 
 A complete example is listed below:
 
 ```
-./target/main batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 false 3 784 100 10 10000 10 3 small_100_batch.model
+./target/main batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 0.0 false 3 784 100 10 10000 10 3 small_100_batch.model
 ```
 
-In the example above, we use a **learning rate** of 0.1, we do not use any biases (all initialized to 0), we train on 10000 images, with a batch size of 10, and we run through the full dataset 3 times. We save the result to `small_100_batch.model`.
+In the example above, we use a **learning rate** of 0.1, we set **labmda** to 0 (no regularization for weight decay) we do not use any biases (all initialized to 0), we train on 10000 images, with a batch size of 10, and we run through the full dataset 3 times. We save the result to `small_100_batch.model`.
 
 Running the above results in:
 
 ```
-$ ./target/main batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 false 3 784 100 10 10000 10 3 small_100_batch.model
+$ ./target/main batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 0.0 false 3 784 100 10 10000 10 3 small_100_batch.model
 
 [2024-09-25 21:03:38]: Starting to load MNIST labels
 [2024-09-25 21:03:38]: Finished loading MNIST labels
@@ -177,22 +177,22 @@ $ ./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3
 [2024-10-12 12:21:01]: Finished saving updated model
 ```
 
-*Note: retraining an existing model preserves the original learning rate*
+*Note: retraining an existing model preserves the original learning rate and lambda*
 
 #### Threaded (Mini)batch Training
 
 (Mini)batch training can be sped up by using threading, with the following syntax:
 
 ```
-./target/main threaded-batch <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
+./target/main threaded-batch <path to labels> <path to images> <learning rate> <lambda> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
 ```
 
 An example is:
 ```
-./exe/main threaded-batch data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 true 3 784 100 47 10000 4 16 test.model
+./exe/main threaded-batch data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 0.0 true 3 784 100 47 10000 4 16 test.model
 ```
 
-Here we train on 10000 images with a batch size of 4, iterating over 16 total epochs. Note that **important** tunables are available in `main.h` that control threading. For threaded training, we are particularly concerned with `TRAINING_MAX_THREADS` and `THREAD_EPOCHS_BEFORE_COMBINE`. While the maximum threads is fairly self explanatory, `THREAD_EPOCHS_BEFORE_COMBINE` requires a bit of explanation -- this value controls how many epochs are scheduled per thread before the weights and biases are averaged across the network.
+Here we train on 10000 images with a batch size of 4, iterating over 16 total epochs. Note that **important** tunables are available in `training.h` that control threading. For threaded training, we are particularly concerned with `TRAINING_MAX_THREADS` and `THREAD_EPOCHS_BEFORE_COMBINE`. While the maximum threads is fairly self explanatory, `THREAD_EPOCHS_BEFORE_COMBINE` requires a bit of explanation -- this value controls how many epochs are scheduled per thread before the weights and biases are averaged across the network.
 
 If we have:
 ```
@@ -206,7 +206,7 @@ Keep in mind that `epochs` on the command line refers to the **total** number of
 
 With our test command above, we receive the following output:
 ```
-$ ./exe/main threaded-batch data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 true 3 784 100 47 10000 4 16 test.model
+$ ./exe/main threaded-batch data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 0.05 0.0 true 3 784 100 47 10000 4 16 test.model
 
 [2024-10-15 22:22:15]: Starting to load MNIST labels
 [2024-10-15 22:22:15]: Finished loading MNIST labels
@@ -291,11 +291,15 @@ Images predicted correctly: 9228
 Percentage correct: 92.28000%
 ```
 
-**Note:** To adjust the number of threads used in `threaded-predict`, please adjust `INFERENCE_MAX_THREADS` in `main.h`. Its default value is 4.
+**Note:** To adjust the number of threads used in `threaded-predict`, please adjust `INFERENCE_MAX_THREADS` in `inference.h`. Its default value is 4.
 
 ## File Descriptions
 
 Descriptions of each file in `src/` and their functions:
+
+### *inference.c*
+
+Runners for inference
 
 ### *main.c*
 
@@ -320,6 +324,10 @@ The Neural Network itself and associated helper functions / data structures, lik
 ### *Neural_Network_Threading.c*
 
 Threading add-ons for the Neural Network. Handles data wrapping for `pthread` and execution of training.
+
+### *training.c*
+
+Runners for executing training
 
 ### *utils.c*
 
