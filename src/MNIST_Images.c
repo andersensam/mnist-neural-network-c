@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-15
+ * @version: 2024-10-22
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -23,14 +23,14 @@
 #define MATRIX_STRING "%1.3f"
 #include "Matrix.c"
 
-MNIST_Images* MNIST_Images_init(const char* path) {
+MNIST_Images* MNIST_Images_alloc(const char* path) {
 
     // Open the path to where the images are stored, in read-only mode
     FILE* images_file = fopen(path, "rb");
 
     if (images_file == NULL) {
 
-        fprintf(stderr, "ERR: <MNIST_Images_init> Unable to open the path to the MNIST imagess\n");
+        fprintf(stderr, "ERR: <MNIST_Images_alloc> Unable to open the path to the MNIST imagess\n");
         exit(EXIT_FAILURE);
     }
 
@@ -40,7 +40,7 @@ MNIST_Images* MNIST_Images_init(const char* path) {
     // Read in 8 bytes from the file, grabbing the magic number and the number of items contained
     if (fread(&image_buffer, sizeof(uint32_t), 4, images_file) != 4){
 
-        fprintf(stderr, "ERR: <MNIST_Images_init> Unable to read headers from MNIST images file\n");
+        fprintf(stderr, "ERR: <MNIST_Images_alloc> Unable to read headers from MNIST images file\n");
 
         fclose(images_file);
         exit(EXIT_FAILURE);
@@ -49,11 +49,11 @@ MNIST_Images* MNIST_Images_init(const char* path) {
     // The first entry in the array is used for the magic number; the second is for the number of items
     if (map_uint32(image_buffer[0]) != MNIST_IMAGE_MAGIC) {
 
-        fprintf(stderr, "ERR: <MNIST_Images_init> Mistmatched magic number in the MNIST images file header\n");
+        fprintf(stderr, "ERR: <MNIST_Images_alloc> Mistmatched magic number in the MNIST images file header\n");
 
         if (MNIST_IMAGES_DEBUG) {
 
-            fprintf(stderr, "DEBUG: <MNIST_Images_init> Got value %u but was expecting %u\n", map_uint32(image_buffer[0]),
+            fprintf(stderr, "DEBUG: <MNIST_Images_alloc> Got value %u but was expecting %u\n", map_uint32(image_buffer[0]),
                 MNIST_IMAGE_MAGIC);
         }
         
@@ -64,9 +64,9 @@ MNIST_Images* MNIST_Images_init(const char* path) {
     // Validate the image size matches what we're expecting
     if (map_uint32(image_buffer[2]) != MNIST_IMAGE_HEIGHT || map_uint32(image_buffer[3]) != MNIST_IMAGE_WIDTH) {
 
-        fprintf(stderr, "ERR: <MNIST_Images_init>: Unexpected image dimensions provided. Check include/MNIST_Images.h\n");
+        fprintf(stderr, "ERR: <MNIST_Images_alloc>: Unexpected image dimensions provided. Check include/MNIST_Images.h\n");
 
-        if (MNIST_IMAGES_DEBUG) { fprintf(stderr, "DEBUG: <MNIST_Images_init> Detected: %u x %u\n", 
+        if (MNIST_IMAGES_DEBUG) { fprintf(stderr, "DEBUG: <MNIST_Images_alloc> Detected: %u x %u\n", 
             map_uint32(image_buffer[2]), map_uint32(image_buffer[3])); }
 
         fclose(images_file);
@@ -78,7 +78,7 @@ MNIST_Images* MNIST_Images_init(const char* path) {
 
     if (target == NULL) {
 
-        fprintf(stderr, "ERR: <MNIST_Images_init> Unable to allocate memory to create MNIST_Images\n");
+        fprintf(stderr, "ERR: <MNIST_Images_alloc> Unable to allocate memory to create MNIST_Images\n");
         
         fclose(images_file);
         exit(EXIT_FAILURE);
@@ -96,7 +96,7 @@ MNIST_Images* MNIST_Images_init(const char* path) {
     for (uint32_t i = 0; i < target->num_images; ++i) {
 
         // For each expected image, create a PixelMatrix to store it in
-        target->images[i] = PixelMatrix_init(MNIST_IMAGE_HEIGHT, MNIST_IMAGE_WIDTH);
+        target->images[i] = PixelMatrix_alloc(MNIST_IMAGE_HEIGHT, MNIST_IMAGE_WIDTH);
 
         // For each expected pixel, grab the value and store it in the PixelMatrix
         for (size_t j = 0; j < MNIST_IMAGE_HEIGHT; ++j) {
@@ -105,7 +105,7 @@ MNIST_Images* MNIST_Images_init(const char* path) {
 
                 if (fread(&pixel_value, sizeof(uint8_t), 1, images_file) != 1) {
 
-                    fprintf(stderr, "ERR: <MNIST_Images_init> Error reading pixel data @ index (%u, %zu, %zu)\n", i,  j, k);
+                    fprintf(stderr, "ERR: <MNIST_Images_alloc> Error reading pixel data @ index (%u, %zu, %zu)\n", i,  j, k);
 
                     fclose(images_file);
                     exit(EXIT_FAILURE);
@@ -121,6 +121,7 @@ MNIST_Images* MNIST_Images_init(const char* path) {
 
     target->get = MNIST_Images_get;
     target->clear = MNIST_Images_clear;
+    target->size = MNIST_Images_size;
 
     return target;
 }
@@ -169,4 +170,15 @@ void MNIST_Images_clear(MNIST_Images* target) {
 float MNIST_Images_pixel_to_float(const uint8_t* pixel) {
 
     return (float)*pixel / 255.0f;
+}
+
+size_t MNIST_Images_size(const MNIST_Images* target) {
+
+    if (target == NULL) {
+
+        fprintf(stderr, "ERR: <MNIST_Images_size>: Invalid MNIST_Images instance passed to size\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return sizeof(*target) + (target->num_images * sizeof(PixelMatrix*)) + (target->num_images * target->images[0]->size(target->images[0]));
 }

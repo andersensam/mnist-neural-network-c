@@ -17,12 +17,12 @@
 
 #include "include/Neural_Network_Threading.h"
 
-Threaded_Inference_Result* Threaded_Inference_Result_init(const Neural_Network* nn, const MNIST_Images* images,
+Threaded_Inference_Result* Threaded_Inference_Result_alloc(const Neural_Network* nn, const MNIST_Images* images,
     size_t image_start_index, size_t num_images) {
 
     if (nn == NULL || images == NULL) {
 
-        fprintf(stderr, "ERR: <Threaded_Inference_Result_init> Invalid Neural Network or MNIST_Images passed to Threaded_Inference_Result_init\n");
+        fprintf(stderr, "ERR: <Threaded_Inference_Result_alloc> Invalid Neural Network or MNIST_Images passed to Threaded_Inference_Result_alloc\n");
         exit(EXIT_FAILURE);
     }
 
@@ -30,7 +30,7 @@ Threaded_Inference_Result* Threaded_Inference_Result_init(const Neural_Network* 
 
     if (target == NULL) {
 
-        fprintf(stderr, "ERR: <Threaded_Inference_Result_init> Unable to allocate Threaded_Inference_Result\n");
+        fprintf(stderr, "ERR: <Threaded_Inference_Result_alloc> Unable to allocate Threaded_Inference_Result\n");
         exit(EXIT_FAILURE);
     }
 
@@ -39,7 +39,7 @@ Threaded_Inference_Result* Threaded_Inference_Result_init(const Neural_Network* 
     target->image_start_index = image_start_index;
     target->num_images = num_images;
 
-    target->results = FloatMatrix_init(MNIST_LABELS, num_images);
+    target->results = FloatMatrix_alloc(MNIST_LABELS, num_images);
 
     target->clear = Threaded_Inference_Result_clear;
 
@@ -87,12 +87,12 @@ void* Neural_Network_Threading_predict(void* thread_void) {
     return NULL;
 }
 
-Threaded_Training* Threaded_Training_init(Neural_Network* nn, const MNIST_Images* images, const MNIST_Labels* labels,
+Threaded_Training* Threaded_Training_alloc(Neural_Network* nn, const MNIST_Images* images, const MNIST_Labels* labels,
     size_t num_images, size_t batch_size, size_t epochs, size_t thread_id) {
 
     if (nn == NULL || images == NULL || labels == NULL) {
 
-        fprintf(stderr, "ERR: <Threaded_Training_init> Invalid Neural Network, images, or labels provided to Threaded_Training_init\n");
+        fprintf(stderr, "ERR: <Threaded_Training_alloc> Invalid Neural Network, images, or labels provided to Threaded_Training_alloc\n");
         exit(EXIT_FAILURE);
     }
 
@@ -100,7 +100,7 @@ Threaded_Training* Threaded_Training_init(Neural_Network* nn, const MNIST_Images
 
     if (target == NULL) {
 
-        fprintf(stderr, "ERR: <Threaded_Training_init> Unable to allocate memory for Threaded_Training\n");
+        fprintf(stderr, "ERR: <Threaded_Training_alloc> Unable to allocate memory for Threaded_Training\n");
         exit(EXIT_FAILURE);
     }
 

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-15
+ * @version: 2024-10-28
  *
  * General Notes:
  *
@@ -88,13 +88,6 @@ typedef struct Neural_Network_Layer {
     /* Methods */
 
     /**
-     * Normalize a layer
-     * @param target Pointer to the FloatMatrix to normalize
-     * @returns Returns a FloatMatrix with its values normalized
-     */
-    FloatMatrix* (*normalize)(const FloatMatrix* target);
-
-    /**
      * Copy a Neural Network Layer
      * @param self Neural Network Layer to copy
      * @returns Returns a copy of the specified Neural Network Layer
@@ -107,6 +100,13 @@ typedef struct Neural_Network_Layer {
      */
     void (*clear)(struct Neural_Network_Layer* target);
 
+    /**
+     * Get the size of a Neural Network Layer
+     * @param target the Neural Network Layer to get the size of
+     * @returns Returns the total size of the allocated layer
+     */
+    size_t (*size)(const struct Neural_Network_Layer* target);
+
 } Neural_Network_Layer;
 
 /**
@@ -117,14 +117,7 @@ typedef struct Neural_Network_Layer {
  * @param import Boolean of whether or not weights / biases are being read in
  * @returns Returns a pointer to a Neural Network Layer
  */
-Neural_Network_Layer* Neural_Network_Layer_init(size_t num_neurons, size_t previous_layer_neurons, bool generate_biases, bool import);
-
-/**
- * Normalize a Neural Network Layer
- * @param target The pointer to the FloatMatrix we want to normalize
- * @returns Returns a new FloatMatrix with its values normalized
- */
-FloatMatrix* Neural_Network_Layer_normalize_layer(const FloatMatrix* target);
+Neural_Network_Layer* Neural_Network_Layer_alloc(size_t num_neurons, size_t previous_layer_neurons, bool generate_biases, bool import);
 
 /**
  * Copy a Neural Network Layer
@@ -138,6 +131,13 @@ Neural_Network_Layer* Neural_Network_Layer_copy(const Neural_Network_Layer* self
  * @param target The Neural Network Layer instance to clean up
  */
 void Neural_Network_Layer_clear(Neural_Network_Layer* target);
+
+/**
+ * Get the size of a Neural Network Layer
+ * @param target the Neural Network Layer to get the size of
+ * @returns Returns the total size of the allocated layer
+ */
+size_t Neural_Network_Layer_size(const Neural_Network_Layer* target);
 
 typedef struct Neural_Network {
 
@@ -220,6 +220,13 @@ typedef struct Neural_Network {
      */
     void (*clear)(struct Neural_Network* target);
 
+    /**
+     * Get the size of a Neural Network
+     * @param target The Neural Network to get the size of
+     * @returns Returns the actual size of the Neural Network
+     */
+    size_t (*size)(const struct Neural_Network* target);
+
 } Neural_Network;
 
 /**
@@ -231,7 +238,7 @@ typedef struct Neural_Network {
  * @param lambda Hyperparameter for regularization
  * @returns Returns a pointer to a Neural Network
  */
-Neural_Network* Neural_Network_init(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases, float lambda);
+Neural_Network* Neural_Network_alloc(size_t num_layers, const size_t* layer_info, float learning_rate, bool generate_biases, float lambda);
 
 /**
  * Cleans up a Neural Network instance
@@ -352,5 +359,11 @@ Neural_Network* Neural_Network_copy(const Neural_Network* self);
  */
 FloatMatrix* Neural_Network_expand_bias(const FloatMatrix* current_bias, size_t batch_size);
 
-#endif
+/**
+ * Get the size of a Neural Network
+ * @param target The Neural Network to get the size of
+ * @returns Returns a size_t of the actual size of the network
+ */
+size_t Neural_Network_size(const Neural_Network* target);
 
+#endif

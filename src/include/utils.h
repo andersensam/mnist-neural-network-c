@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-17
+ * @version: 2024-10-23
  *
  * General Notes:
  *
@@ -65,7 +65,15 @@ void shuffle(size_t* index, size_t elements);
 
 /**
  * Generate an array of size_t that are randomly shuffled
- * @param elements
+ * @param elements Number of elements
+ * @returns Returns an array of size_t
+ */
+size_t* create_index_array(size_t elements);
+
+/**
+ * Generate an array of size_t that are randomly shuffled, starting with a specific index
+ * @param start_index Index to start with
+ * @param elements Number of elements
  * @returns Returns an array of size_t
  */
 size_t* create_index_array(size_t elements);

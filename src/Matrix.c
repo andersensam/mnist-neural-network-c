@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Matrix Library in C
  * @author : Samuel Andersen
- * @version: 2024-10-15
+ * @version: 2024-10-22
  *
  * Note: see upstream for Matrix @ https://github.com/andersensam/Matrix
  * 
@@ -154,7 +154,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(dot)(const MATRIX_TYPE_NAME *self, const MATRIX_
         exit(EXIT_FAILURE);
     }
 
-    MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(self->num_rows, target->num_cols);
+    MATRIX_TYPE_NAME *result = MATRIX_METHOD(alloc)(self->num_rows, target->num_cols);
     MATRIX_TYPE sum = 0;
 
     // Iterate over the expected rows of the dot Matrix
@@ -191,7 +191,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(get_row)(const MATRIX_TYPE_NAME *target, size_t 
         exit(EXIT_FAILURE);
     }
 
-    MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(1, target->num_cols);
+    MATRIX_TYPE_NAME *result = MATRIX_METHOD(alloc)(1, target->num_cols);
 
     for (size_t i = 0; i < target->num_cols; ++i) {
 
@@ -216,7 +216,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(get_col)(const MATRIX_TYPE_NAME *target, size_t 
         exit(EXIT_FAILURE);
     }
 
-    MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(target->num_rows, 1);
+    MATRIX_TYPE_NAME *result = MATRIX_METHOD(alloc)(target->num_rows, 1);
 
     for (size_t i = 0; i < target->num_rows; ++i) {
 
@@ -361,7 +361,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(transpose)(const MATRIX_TYPE_NAME *target) {
         exit(EXIT_FAILURE);
     }
 
-    MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(target->num_cols, target->num_rows);
+    MATRIX_TYPE_NAME *result = MATRIX_METHOD(alloc)(target->num_cols, target->num_rows);
 
     for (size_t i = 0; i < target->num_rows; ++i) {
 
@@ -372,7 +372,6 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(transpose)(const MATRIX_TYPE_NAME *target) {
     }
 
     return result;
-
 }
 
 /**
@@ -748,7 +747,7 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(copy)(const MATRIX_TYPE_NAME *target) {
         exit(EXIT_FAILURE);
     }
 
-    MATRIX_TYPE_NAME *result = MATRIX_METHOD(init)(target->num_rows, target->num_cols);
+    MATRIX_TYPE_NAME *result = MATRIX_METHOD(alloc)(target->num_rows, target->num_cols);
 
     memcpy(&(result->data[0]), &(target->data[0]), target->num_rows * target->num_cols * sizeof(MATRIX_TYPE));
 
@@ -869,7 +868,7 @@ MATRIX_TYPE* MATRIX_METHOD(expose)(const MATRIX_TYPE_NAME *target) {
  * @param desired_cols Number of colums to allocate per row
  * @returns Returns a Matrix with all data elements allocated
  */
-MATRIX_TYPE_NAME *MATRIX_METHOD(init)(size_t desired_rows, size_t desired_cols) {
+MATRIX_TYPE_NAME *MATRIX_METHOD(alloc)(size_t desired_rows, size_t desired_cols) {
 
     // Allocate the memory needed for the Matrix struct
     MATRIX_TYPE_NAME *target = malloc(sizeof(MATRIX_TYPE_NAME));
@@ -925,8 +924,25 @@ MATRIX_TYPE_NAME *MATRIX_METHOD(init)(size_t desired_rows, size_t desired_cols) 
     target->sum = MATRIX_METHOD(sum);
     target->max_idx = MATRIX_METHOD(max_idx);
     target->expose = MATRIX_METHOD(expose);
+    target->size = MATRIX_METHOD(size);
 
     return target;
+}
+
+/**
+ * Get the size of a current Matrix
+ * @param target The Matrix to get the size of
+ * @returns Returns a size_t of the total size
+ */
+size_t MATRIX_METHOD(size)(const MATRIX_TYPE_NAME *target) {
+
+    if (target == NULL) {
+
+        fprintf(stderr, "ERR: <size> Invalid Matrix provided to size\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return sizeof(*target) + (sizeof(MATRIX_TYPE) * target->num_rows * target->num_cols);
 }
 
 #undef MATRIX_TYPE_NAME

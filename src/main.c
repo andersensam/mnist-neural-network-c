@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-19
+ * @version: 2024-10-28
  *
  * General Notes:
  *
@@ -204,15 +204,15 @@ int main(int argc, char* argv[]) {
     else if (strncmp(argv[1], "help", 4) == 0) {
 
         printf("Expected usage: main train labels_path images_path learning_rate include_biases num_layers [layer_info] num_training_images epochs model_name\n");
-        printf("Example for train: main train data/labels data/images 0.1 true 3 786 100 10 1000 3 model.model\n\n");
+        printf("Example for train: main train data/labels data/images 0.1 true 3 784 100 10 1000 3 model.model\n\n");
         printf("This example has a learning rate of 0.1, uses biases, has 3 layers, and uses 1000 images to train on, over 3 epochs\n");
 
         printf("\n\nExpected usage: main batch-train labels_path images_path learning_rate lambda include_biases num_layers [layer_info] num_training_images batch_size epochs model_name\n");
-        printf("Example for train: main train data/labels data/images 0.1 0.0 true 3 786 100 10 1000 10 10 model.model\n\n");
+        printf("Example for train: main train data/labels data/images 0.1 0.0 true 3 784 100 10 1000 10 10 model.model\n\n");
         printf("This example has a learning rate of 0.1, lambda of 0, uses biases, has 3 layers,uses 1000 images to train on, with a batch size of 10, and 10 epochs\n");
 
         printf("\n\nExpected usage: main threaded-batch labels_path images_path learning_rate lambda include_biases num_layers [layer_info] num_training_images batch_size epochs model_name\n");
-        printf("Example for threaded-batch: main threaded-batch data/labels data/images 0.1 0.0 true 3 786 100 10 1000 10 10 model.model\n");
+        printf("Example for threaded-batch: main threaded-batch data/labels data/images 0.1 0.0 true 3 784 100 10 1000 10 10 model.model\n");
 
         printf("\n\nExpected usage: main update-online labels_path images_path num_training_images epochs model_path updated_model_path\n");
         printf("Example for update: main update-online /labels data/images 1000 3 models/existing_model models/updated_model\n");

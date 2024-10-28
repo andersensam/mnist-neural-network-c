@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-15
+ * @version: 2024-10-22
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -17,14 +17,14 @@
 
 #include "include/MNIST_Labels.h"
 
-MNIST_Labels* MNIST_Labels_init(const char* path) {
+MNIST_Labels* MNIST_Labels_alloc(const char* path) {
 
     // Open the path to where the labels are stored, in read-only mode
     FILE* label_file = fopen(path, "rb");
 
     if (label_file == NULL) {
 
-        fprintf(stderr, "ERR: <MNIST_Labels_init> Unable to open the path to the MNIST labels\n");
+        fprintf(stderr, "ERR: <MNIST_Labels_alloc> Unable to open the path to the MNIST labels\n");
         exit(EXIT_FAILURE);
     }
 
@@ -34,7 +34,7 @@ MNIST_Labels* MNIST_Labels_init(const char* path) {
     // Read in 8 bytes from the file, grabbing the magic number and the number of items contained
     if (fread(&label_buffer, sizeof(uint32_t), 2, label_file) != 2){
 
-       fprintf(stderr, "ERR: <MNIST_Labels_init> Unable to read headers from MNIST label file\n");
+       fprintf(stderr, "ERR: <MNIST_Labels_alloc> Unable to read headers from MNIST label file\n");
 
         fclose(label_file);
         exit(EXIT_FAILURE);
@@ -43,11 +43,11 @@ MNIST_Labels* MNIST_Labels_init(const char* path) {
     // The first entry in the array is used for the magic number; the second is for the number of items
     if (map_uint32(label_buffer[0]) != MNIST_LABEL_MAGIC) {
 
-        fprintf(stderr, "ERR: <MNIST_Labels_init> Mistmatched magic number in the MNIST label file header\n");
+        fprintf(stderr, "ERR: <MNIST_Labels_alloc> Mistmatched magic number in the MNIST label file header\n");
 
         if (MNIST_LABELS_DEBUG) {
 
-            fprintf(stderr, "DEBUG: <MNIST_Labels_init> Got %u but expected %u\n", map_uint32(label_buffer[0]), MNIST_LABEL_MAGIC);
+            fprintf(stderr, "DEBUG: <MNIST_Labels_alloc> Got %u but expected %u\n", map_uint32(label_buffer[0]), MNIST_LABEL_MAGIC);
         }
         
         fclose(label_file);
@@ -59,7 +59,7 @@ MNIST_Labels* MNIST_Labels_init(const char* path) {
 
     if (target == NULL) {
 
-        fprintf(stderr, "ERR: <MNIST_Labels_init> Unable to allocate memory to create MNIST_Labels\n");
+        fprintf(stderr, "ERR: <MNIST_Labels_alloc> Unable to allocate memory to create MNIST_Labels\n");
         
         fclose(label_file);
         exit(EXIT_FAILURE);
@@ -73,7 +73,7 @@ MNIST_Labels* MNIST_Labels_init(const char* path) {
 
     if (target->labels == NULL) {
 
-        fprintf(stderr, "ERR: <MNIST_Labels_init> Unable to allocate memory for the labels\n");
+        fprintf(stderr, "ERR: <MNIST_Labels_alloc> Unable to allocate memory for the labels\n");
 
         free(target);
         fclose(label_file);
@@ -83,7 +83,7 @@ MNIST_Labels* MNIST_Labels_init(const char* path) {
     // Read the labels from the file
     if (fread(target->labels, sizeof(uint8_t), target->num_labels, label_file) != target->num_labels) {
 
-        fprintf(stderr, "ERR: <MNIST_Labels_init> Reading labels was unsuccessful\n");
+        fprintf(stderr, "ERR: <MNIST_Labels_alloc> Reading labels was unsuccessful\n");
 
         free(target->labels);
         free(target);
@@ -96,6 +96,7 @@ MNIST_Labels* MNIST_Labels_init(const char* path) {
 
     target->get = MNIST_Labels_get;
     target->clear = MNIST_Labels_clear;
+    target->size = MNIST_Labels_size;
 
     return target;
 }
@@ -131,4 +132,15 @@ void MNIST_Labels_clear(MNIST_Labels* target) {
 
     free(target->labels);
     free(target);
+}
+
+size_t MNIST_Labels_size(const MNIST_Labels* target) {
+
+    if (target == NULL) {
+
+        fprintf(stderr, "ERR: <MNIST_Labels_size>: Invalid Labels_Images instance passed to size\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return sizeof(*target) + (sizeof(uint8_t) * target->num_labels);
 }

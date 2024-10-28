@@ -22,11 +22,11 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_alloc(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = MNIST_Images_init(images_path);
+    MNIST_Images* images = MNIST_Images_alloc(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_training_images > images->num_images) {
@@ -59,7 +59,7 @@ void train_new_model(const char* labels_path, const char* images_path, size_t nu
     }
 
     // Initalize the Neural Network -- Lambda set to 0 for SGD
-    Neural_Network* nn = Neural_Network_init(num_layers, nn_config, learning_rate, generate_biases, 0);
+    Neural_Network* nn = Neural_Network_alloc(num_layers, nn_config, learning_rate, generate_biases, 0);
 
     // Setup some variables that we'll use again and again in the loop
     PixelMatrix* current_image = NULL;
@@ -117,11 +117,11 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_alloc(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = MNIST_Images_init(images_path);
+    MNIST_Images* images = MNIST_Images_alloc(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_training_images > images->num_images) {
@@ -164,7 +164,7 @@ void train_new_model_batched(const char* labels_path, const char* images_path, s
     }
 
     // Initalize the Neural Network
-    Neural_Network* nn = Neural_Network_init(num_layers, nn_config, learning_rate, generate_biases, lambda);
+    Neural_Network* nn = Neural_Network_alloc(num_layers, nn_config, learning_rate, generate_biases, lambda);
 
     // Use a buffer for snprintf
     char buffer[100];
@@ -201,11 +201,11 @@ void train_new_model_batched_threaded(const char* labels_path, const char* image
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_alloc(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = MNIST_Images_init(images_path);
+    MNIST_Images* images = MNIST_Images_alloc(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_training_images > images->num_images) {
@@ -268,7 +268,7 @@ void train_new_model_batched_threaded(const char* labels_path, const char* image
     }
 
     // Initalize the Neural Network
-    Neural_Network* nn = Neural_Network_init(num_layers, nn_config, learning_rate, generate_biases, lambda);
+    Neural_Network* nn = Neural_Network_alloc(num_layers, nn_config, learning_rate, generate_biases, lambda);
 
     // Create an array of Neural Networks for threading
     Neural_Network** networks = calloc(TRAINING_MAX_THREADS, sizeof(Neural_Network*));
@@ -342,7 +342,7 @@ void train_new_model_batched_threaded(const char* labels_path, const char* image
             for (size_t j = 0; j < TRAINING_MAX_THREADS; ++j) {
 
                 // Create the information for training
-                training[j] = Threaded_Training_init(networks[j], images, labels, num_training_images, batch_size,
+                training[j] = Threaded_Training_alloc(networks[j], images, labels, num_training_images, batch_size,
                     THREAD_EPOCHS_BEFORE_COMBINE, j);
 
                 // Spawn the thread and begin training
@@ -388,11 +388,11 @@ void train_existing_model(const char* labels_path, const char* images_path, size
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_alloc(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = MNIST_Images_init(images_path);
+    MNIST_Images* images = MNIST_Images_alloc(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_training_images > images->num_images) {
@@ -471,11 +471,11 @@ void train_existing_model_batched(const char* labels_path, const char* images_pa
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_alloc(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = MNIST_Images_init(images_path);
+    MNIST_Images* images = MNIST_Images_alloc(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_training_images > images->num_images) {

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-15
+ * @version: 2024-10-28
  *
  * General Notes: MNIST file reading inspired by: https://github.com/AndrewCarterUK/mnist-neural-network-plain-c/blob/master/mnist_file.c 
  *
@@ -60,6 +60,14 @@ typedef struct MNIST_Images {
      * @param target The instance to clean up
      */
     void (*clear)(struct MNIST_Images* target);
+
+    /**
+     * Get the actual size of a MNIST_Images instance
+     * @param target Instance to get the size of
+     * @returns Returns the size of MNIST_Images
+     */
+    size_t (*size)(const struct MNIST_Images* target);
+
 } MNIST_Images;
 
 /**
@@ -67,7 +75,7 @@ typedef struct MNIST_Images {
  * @param path Path to the file containing the images
  * @returns Returns a new MNIST_Images instance pointer
  */
-MNIST_Images* MNIST_Images_init(const char* path);
+MNIST_Images* MNIST_Images_alloc(const char* path);
 
 /**
  * Get a PixelMatrix from the image dataset
@@ -88,5 +96,12 @@ void MNIST_Images_clear(MNIST_Images* target);
  * @returns Returns a float from 0 to 1 representing pixel / 255
  */
 float MNIST_Images_pixel_to_float(const uint8_t* pixel);
+
+/**
+ * Get the actual size of a MNIST_Images instance
+ * @param target Instance to get the size of
+ * @returns Returns the size of MNIST_Labels
+ */
+size_t MNIST_Images_size(const MNIST_Images* target);
 
 #endif
