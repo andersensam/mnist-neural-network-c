@@ -52,6 +52,13 @@ typedef struct MNIST_Labels {
      */
     void (*clear)(struct MNIST_Labels* target);
 
+    /**
+     * Get the size of a MNIST_Labels instance
+     * @param target The MNIST_Labels instance to get the size of
+     * @returns Returns the size of the MNIST_Labels instance
+     */
+    size_t (*size)(const struct MNIST_Labels* target);
+
 } MNIST_Labels;
 
 /**
@@ -59,7 +66,7 @@ typedef struct MNIST_Labels {
  * @param path Path to the file we're reading the labels from
  * @return Returns an instance of MNIST_Labels containing the labels
  */
-MNIST_Labels* MNIST_Labels_init(const char* path);
+MNIST_Labels* MNIST_Labels_alloc(const char* path);
 
 /**
  * Get a label from the label dataset
@@ -73,5 +80,11 @@ uint8_t MNIST_Labels_get(const MNIST_Labels* target, uint32_t index);
  * @param target The MNIST_Labels instance to clean up
  */
 void MNIST_Labels_clear(MNIST_Labels* target);
+
+/**
+* Get the actual size of a MNIST_Labels instance
+* @param target Instance to get the size of
+*/
+size_t MNIST_Labels_size(const MNIST_Labels* target);
 
 #endif

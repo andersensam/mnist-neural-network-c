@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Matrix Library in C
  * @author : Samuel Andersen
- * @version: 2024-10-15
+ * @version: 2024-10-28
  *
  */
 
@@ -277,7 +277,14 @@ typedef struct MATRIX_TYPE_NAME {
      */
     MATRIX_TYPE* (*expose)(const struct MATRIX_TYPE_NAME *target);
 
-} __attribute__((__packed__)) MATRIX_TYPE_NAME;
+    /**
+     * Get the size of a current Matrix
+     * @param target The Matrix to get the size of
+     * @returns Returns a size_t of the total size
+     */
+    size_t (*size)(const struct MATRIX_TYPE_NAME *target);
+
+} MATRIX_TYPE_NAME;
 
 /**
  * Verify that a record is within bounds for a Matrix and that the proper pointers exist
@@ -482,7 +489,7 @@ void MATRIX_METHOD(multiply_o)(const MATRIX_TYPE_NAME *self, const MATRIX_TYPE_N
  * @param desired_cols Number of colums to allocate per row
  * @returns Returns a Matrix with all data elements allocated
  */
-MATRIX_TYPE_NAME *MATRIX_METHOD(init)(size_t desired_rows, size_t desired_cols);
+MATRIX_TYPE_NAME *MATRIX_METHOD(alloc)(size_t desired_rows, size_t desired_cols);
 
 /**
  * Populate a Matrix with a specific value
@@ -516,10 +523,17 @@ size_t MATRIX_METHOD(max_idx)(const MATRIX_TYPE_NAME *target, Vector_Orientation
 
 /**
  * Create a copy of the underlying data and return the pointer to it
-* @param target The Matrix we want to expose
-* @returns Returns a pointer to the data
-*/
+ * @param target The Matrix we want to expose
+ * @returns Returns a pointer to the data
+ */
 MATRIX_TYPE* MATRIX_METHOD(expose)(const MATRIX_TYPE_NAME *target);
+
+/**
+ * Get the size of a current Matrix
+ * @param target The Matrix to get the size of
+ * @returns Returns a size_t of the total size
+ */
+size_t MATRIX_METHOD(size)(const MATRIX_TYPE_NAME *target);
 
 #undef MATRIX_TYPE_NAME
 #undef MATRIX_TYPE

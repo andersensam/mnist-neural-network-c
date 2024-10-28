@@ -21,11 +21,11 @@ void inference(const char* labels_path, const char* images_path, const char* mod
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_alloc(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = MNIST_Images_init(images_path);
+    MNIST_Images* images = MNIST_Images_alloc(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_predict > images->num_images) {
@@ -95,11 +95,11 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
     // Load image dataset and associated labels
     log_message("Starting to load MNIST labels");
-    MNIST_Labels* labels = MNIST_Labels_init(labels_path);
+    MNIST_Labels* labels = MNIST_Labels_alloc(labels_path);
     log_message("Finished loading MNIST labels");
 
     log_message("Starting to load MNIST images");
-    MNIST_Images* images = MNIST_Images_init(images_path);
+    MNIST_Images* images = MNIST_Images_alloc(images_path);
     log_message("Finished loading MNIST images");
 
     if (num_predict > images->num_images) {
@@ -140,15 +140,15 @@ void threaded_inference(const char* labels_path, const char* images_path, const 
 
         if (i == 0) {
 
-            thread_results[i] = Threaded_Inference_Result_init(nn, images, 0, images_per_thread);
+            thread_results[i] = Threaded_Inference_Result_alloc(nn, images, 0, images_per_thread);
         }
         else if (i == INFERENCE_MAX_THREADS - 1) {
 
-            thread_results[i] = Threaded_Inference_Result_init(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, final_thread_images);
+            thread_results[i] = Threaded_Inference_Result_alloc(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, final_thread_images);
         }
         else {
 
-            thread_results[i] = Threaded_Inference_Result_init(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, images_per_thread);
+            thread_results[i] = Threaded_Inference_Result_alloc(nn, images, thread_results[i - 1]->image_start_index + images_per_thread, images_per_thread);
         }
 
         pthread_create(&(thread_ids[i]), NULL, Neural_Network_Threading_predict, (void*)(thread_results[i]));

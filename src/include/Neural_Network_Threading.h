@@ -66,7 +66,7 @@ typedef struct Threaded_Training {
  * @param num_images Number of images processed by this thread
  * @returns Returns a Threaded Inference Result and sets up the FloatMatrix inside
  */
-Threaded_Inference_Result* Threaded_Inference_Result_init(const Neural_Network* nn, const MNIST_Images* images,
+Threaded_Inference_Result* Threaded_Inference_Result_alloc(const Neural_Network* nn, const MNIST_Images* images,
     size_t image_start_index, size_t num_images);
 
 /**
@@ -91,7 +91,7 @@ void* Neural_Network_Threading_predict(void* thread_void);
  * @param thread_id Id of the tread running (good for debugging)
  * @returns Returns a Threaded_Training instance
  */
-Threaded_Training* Threaded_Training_init(Neural_Network* nn, const MNIST_Images* images, const MNIST_Labels* labels,
+Threaded_Training* Threaded_Training_alloc(Neural_Network* nn, const MNIST_Images* images, const MNIST_Labels* labels,
     size_t num_images, size_t batch_size, size_t epochs, size_t thread_id);
 
 /**

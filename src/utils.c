@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-15
+ * @version: 2024-10-23
  *
  * General Notes:
  *
@@ -86,6 +86,27 @@ size_t* create_index_array(size_t elements) {
     }
 
     for (size_t i = 0; i < elements; ++i) {
+
+        target[i] = i;
+    }
+
+    // Shuffle the index array
+    shuffle(target, elements);
+
+    return target;
+}
+
+size_t* create_index_array_custom(size_t start_index, size_t elements) {
+
+    size_t* target = calloc(elements, sizeof(size_t));
+
+    if (target == NULL) {
+
+        fprintf(stderr, "ERR: <create_index_array> Unable to allocate memory for shuffled index array\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (size_t i = start_index; i < elements; ++i) {
 
         target[i] = i;
     }
