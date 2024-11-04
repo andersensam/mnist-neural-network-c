@@ -42,9 +42,19 @@ No other changes are required beyond the above.
 
 ## Compilation
 
-To build the neural network, simply use `make`. By default, this will compile with `-O3`
+This neural network implementation now uses CMake for builds. It is recommended to create a separate build directory and then run CMake there:
 
-To disable optimizations and compile with debug symbols, use `make debug`
+```
+mkdir -v build
+cd build && cmake ..
+make
+```
+
+For building with debug symbols, use the following instead of `cmake ..`:
+
+```
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+```
 
 ## Using the Neural Network
 

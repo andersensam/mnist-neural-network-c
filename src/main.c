@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Neural Network in C
  * @author : Samuel Andersen
- * @version: 2024-10-28
+ * @version: 2024-11-03
  *
  * General Notes:
  *
@@ -222,11 +222,11 @@ int main(int argc, char* argv[]) {
 
         printf("\n\nExpected usage: main predict labels_path images_path num_predict model_path\n");
         printf("Example for predict: main predict data/labels data/images 100 model.model\n\n");
-        printf("This example predicts 100 images");
+        printf("This example predicts 100 images\n");
 
         printf("\n\nExpected usage: main threaded-predict labels_path images_path num_predict model_path\n");
         printf("Example for predict: main threaded-predict data/labels data/images 100 model.model\n\n");
-        printf("This example predicts 100 images");
+        printf("This example predicts 100 images\n");
 
         return 0;
     }
