@@ -71,12 +71,12 @@ The main binary has three options available (with suboptions for train and predi
 As noted above, the first option is to train a new neural network from scratch. To get started, examine the following syntax:
 
 ```
-./target/main train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <epochs> <model name>
+./build/mnist-neural-network train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <epochs> <model name>
 ```
 
 A complete example is listed below:
 ```
-./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 2 small_100.model
+./build/mnist-neural-network train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 2 small_100.model
 ```
 
 The example reveals that: we want to train a new model, using a **learning rate** of 0.1, we want to use biases, there are **3** total layers (including input). The first layer has 784 neurons, the second has 100, and the output has 10. We want to train on a subset of 1500 images and we want to export the model to file `small_100.model`.
@@ -84,7 +84,7 @@ The example reveals that: we want to train a new model, using a **learning rate*
 Running the example above produces the following output:
 
 ```
-$ ./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 2 small_100.model
+$ ./build/mnist-neural-network train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 2 small_100.model
 
 [2024-09-18 23:32:59]: Starting to load MNIST labels
 [2024-09-18 23:32:59]: Finished loading MNIST labels
@@ -101,18 +101,18 @@ $ ./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 
 In the event that you'd like to train and existing model with more data, use the following:
 
 ```
-./target/main update-online <path to labels> <path to images> <images to train on> <epochs> <existing model path> <updated model path>
+./build/mnist-neural-network update-online <path to labels> <path to images> <images to train on> <epochs> <existing model path> <updated model path>
 ```
 
 An example is:
 ```
-./target/main update-online data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 3 test.model updated.model
+./build/mnist-neural-network update-online data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 3 test.model updated.model
 ```
 
 We import the existing model and its metadata, then train on 20000 images by three epochs, saving to `updated.model`
 
 ```
-$ ./target/main update-online data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 3 test.model updated.model
+$ ./build/mnist-neural-network update-online data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 3 test.model updated.model
 
 [2024-10-12 12:20:03]: Starting to load MNIST labels
 [2024-10-12 12:20:03]: Finished loading MNIST labels
@@ -131,13 +131,13 @@ $ ./target/main update-online data/train-labels-idx1-ubyte data/train-images-idx
 Using (mini)batch, we can train the Neural Network with the following syntax:
 
 ```
-./target/main batch-train <path to labels> <path to images> <learning rate> <lambda> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
+./build/mnist-neural-network batch-train <path to labels> <path to images> <learning rate> <lambda> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
 ```
 
 A complete example is listed below:
 
 ```
-./target/main batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 0.0 false 3 784 100 10 10000 10 3 small_100_batch.model
+./build/mnist-neural-network batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 0.0 false 3 784 100 10 10000 10 3 small_100_batch.model
 ```
 
 In the example above, we use a **learning rate** of 0.1, we set **labmda** to 0 (no regularization for weight decay) we do not use any biases (all initialized to 0), we train on 10000 images, with a batch size of 10, and we run through the full dataset 3 times. We save the result to `small_100_batch.model`.
@@ -145,7 +145,7 @@ In the example above, we use a **learning rate** of 0.1, we set **labmda** to 0 
 Running the above results in:
 
 ```
-$ ./target/main batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 0.0 false 3 784 100 10 10000 10 3 small_100_batch.model
+$ ./build/mnist-neural-network batch-train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 0.0 false 3 784 100 10 10000 10 3 small_100_batch.model
 
 [2024-09-25 21:03:38]: Starting to load MNIST labels
 [2024-09-25 21:03:38]: Finished loading MNIST labels
@@ -164,18 +164,18 @@ As you can set the batch size to whatever you'd like, you could use the batch si
 In the event that you'd like to train and existing model with more data with batching, use the following:
 
 ```
-./target/main update-batch <path to labels> <path to images> <images to train on> <batch size> <epochs> <existing model path> <updated model path>
+./build/mnist-neural-network update-batch <path to labels> <path to images> <images to train on> <batch size> <epochs> <existing model path> <updated model path>
 ```
 
 An example is:
 ```
-./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 8 3 test.model updated.model
+./build/mnist-neural-network update-batch data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 8 3 test.model updated.model
 ```
 
 We import the existing model and its metadata, then train on 20000 images by three epochs (with batch size 8), saving to `updated.model`
 
 ```
-$ ./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 8 3 test.model updated.model
+$ ./build/mnist-neural-network update-batch data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 20000 8 3 test.model updated.model
 
 [2024-10-12 12:20:55]: Starting to load MNIST labels
 [2024-10-12 12:20:55]: Finished loading MNIST labels
@@ -194,7 +194,7 @@ $ ./target/main update-batch data/train-labels-idx1-ubyte data/train-images-idx3
 (Mini)batch training can be sped up by using threading, with the following syntax:
 
 ```
-./target/main threaded-batch <path to labels> <path to images> <learning rate> <lambda> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
+./build/mnist-neural-network threaded-batch <path to labels> <path to images> <learning rate> <lambda> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <batch size> <epochs> <model name>
 ```
 
 An example is:
@@ -237,13 +237,13 @@ $ ./exe/main threaded-batch data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ub
 Running inference on a trained model follows a similar syntax:
 
 ```
-./target/main predict <path to labels> <path to images> <images to predict> <path to model>
+./build/mnist-neural-network predict <path to labels> <path to images> <images to predict> <path to model>
 ```
 
 An example is:
 
 ```
-./target/main predict data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 1000 models/large_100.model
+./build/mnist-neural-network predict data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 1000 models/large_100.model
 ```
 
 Executing the above results in:
@@ -272,18 +272,18 @@ Percentage correct: 94.60000%
 Running multithreaded inference is the same as standard inference, only swapping out `predict` for `threaded-predict`:
 
 ```
-./target/main threaded-predict <path to labels> <path to images> <images to predict> <path to model>
+./build/mnist-neural-network threaded-predict <path to labels> <path to images> <images to predict> <path to model>
 ```
 
 An example is:
 
 ```
-./target/main threaded-predict data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 1000 models/large_256_32.model
+./build/mnist-neural-network threaded-predict data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 1000 models/large_256_32.model
 ```
 
 Executing the above results in:
 ```
-$ ./target/main threaded-predict data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 1000 models/large_256_32.model
+$ ./build/mnist-neural-network threaded-predict data/t10k-labels-idx1-ubyte data/t10k-images-idx3-ubyte 1000 models/large_256_32.model
 
 [2024-09-22 14:25:24]: Starting to load MNIST labels
 [2024-09-22 14:25:24]: Finished loading MNIST labels
