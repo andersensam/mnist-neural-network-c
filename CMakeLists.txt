@@ -19,6 +19,7 @@ add_library(Neural_Network_Threading ../src/Neural_Network_Threading.c)
 link_libraries(MNIST_Labels utils)
 link_libraries(MNIST_Images utils)
 link_libraries(Neural_Network utils)
+link_libraries(Neural_Network m)
 link_libraries(Neural_Network_Threading utils)
 
 link_libraries(Neural_Network MNIST_Labels)
